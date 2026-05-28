@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AWESOME.SCREEN v6</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root { 
+            --bg-color: #191919; 
+            --card-bg: #222222; 
+            --input-bg: #333333; 
+            --text-main: #FFFFFF; 
+            --text-muted: #AAAAAA;
+            --accent-green: #AEEA00; 
+            --accent-red: #FF4D6D; 
+            --accent-cyan: #00B9F2;
+            --accent-yellow: #FFC107;
+            --border-color: #333333;
+            --sidebar-bg: #D9D9D9; 
+        }
+
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Inter', 'Kanit', sans-serif; margin: 0; padding: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .hidden { display: none !important; }
+        .flex-row { display: flex; gap: 10px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* --- Sidebar & Header --- */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 998; display: none; transition: 0.3s; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--sidebar-bg); z-index: 1000; transition: 0.3s ease-in-out; display: flex; flex-direction: column; border-top-right-radius: 20px; border-bottom-right-radius: 20px; }
+        .sidebar.open { left: 0; }
+        .sidebar-header { padding: 20px 20px 10px 20px; }
+        .menu-btn { background: transparent; color: #FFF; width: 36px; height: 36px; border: 1px solid #FFF; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; }
+        .sidebar .menu-btn { background: #FFF; color: #000; border: none; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .sidebar-menu { flex: 1; padding: 10px 25px; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-item { display: flex; align-items: center; gap: 15px; color: #111; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        
+        .app-header { padding: 20px 30px 20px 30px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .greeting-text { font-size: 26px; font-weight: 800; background: linear-gradient(90deg, #FFC107, #FF4D6D, #00B9F2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px; margin-top:15px; }
+        .user-name-display { font-size: 18px; font-weight: 700; color: #FFF; display: flex; align-items: center; gap: 8px; }
+        .user-brand-display { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+        .avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+        
+        /* 📌 จัดระเบียบ Badge ให้อยู่กึ่งกลางใต้รูปเสมอ */
+        .tier-badge { color: #FFF; font-size: 11px; font-weight: 700; text-align:center; }
+        .badge-tier { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; color: #FFF; text-transform: uppercase; display: inline-block; }
+        .tier-icon { background: linear-gradient(135deg, #FF4D6D, #D50000); }
+        .tier-vvip { background: linear-gradient(135deg, #FFD700, #F57F17); color: #000; }
+        .tier-vip { background: #FFC107; color: #000; }
+        .tier-member { background: #888888; }
+        .tier-regular { background: #444444; }
+
+        /* --- Content Areas --- */
+        .content-area { padding: 0 30px 20px 30px; min-height: calc(100vh - 350px); display: flex; flex-direction: column; }
+        
+        .pending-banner { background: #FFC107; border-radius: 20px; padding: 25px 20px; margin: 20px 30px; color: #000; }
+        .pending-banner h1 { font-size: 34px; font-weight: 900; margin: 0; line-height: 1.1; }
+        .status-tracker { background: #252525; border-radius: 16px; padding: 20px; margin: 0 30px 20px 30px; }
+        .s-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+        .s-item.done { color: #00E676; }
+        .s-item.doing { color: #FFC107; }
+        .s-item.wait { color: #555; }
+
+        .status-banner { padding: 20px; border-radius: 16px; margin-bottom: 25px; position: relative; overflow: hidden; }
+        
+        .order-card { background: #2A2A2A; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #444; }
+        .step-bar-container { display: flex; justify-content: space-between; gap: 4px; margin-top: 15px; }
+        .step-bar { flex: 1; height: 4px; border-radius: 2px; }
+        .step-label-container { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9px; font-weight: 600; text-align: center; }
+        .step-label { flex: 1; }
+
+        /* --- SA Job Matching UI --- */
+        .sa-stats-container { display: flex; gap: 10px; margin-bottom: 20px; margin-top: 20px; }
+        .sa-stat-box { flex: 1; background: #2A2A2A; border-radius: 12px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .sa-stat-box.active { border-color: var(--accent-cyan); background: #333; }
+        .sa-stat-num { font-size: 24px; font-weight: 700; margin-bottom: 2px; line-height: 1; }
+        .sa-stat-label { font-size: 11px; color: #888; font-weight: 500; }
+
+        .chips-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
+        .chips-container::-webkit-scrollbar { display: none; }
+        .chip { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #FFF; background: #333; border: 1px solid #444; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .chip.active { background: linear-gradient(90deg, #FF4D6D, #00B9F2); border-color: transparent; }
+
+        .search-container { position: relative; margin-bottom: 15px; }
+        .search-container i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px; pointer-events: none; }
+        .match-search { background: #333 !important; border: none !important; color: #FFF !important; border-radius: 16px !important; padding: 14px 15px 14px 45px !important; width: 100% !important; box-sizing: border-box !important; font-size: 14px !important; outline: none !important; }
+
+        .section-title-yellow { color: var(--accent-yellow); font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 10px; }
+        .section-title-green { color: #00E676; font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 10px; }
+
+        .sa-card { background: #222; border-left: 3px solid #555; padding: 15px; margin-bottom: 15px; border-radius: 12px; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+        .sa-card.pending { border-left-color: var(--accent-yellow); }
+        .sa-card.active { border-left-color: #00E676; }
+
+        .badge-yellow { background: var(--accent-yellow); color: #000; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 12px; }
+        .badge-green { background: #00E676; color: #000; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 12px; }
+        .badge-tier-small { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; color: #FFF; display: inline-block; margin-left: 6px; vertical-align: middle; }
+
+        .btn-cyan { background: var(--accent-cyan); color: #FFF; font-size: 14px; padding: 14px; border-radius: 12px; width: 100%; border: none; font-weight: 700; cursor: pointer; margin-top: 15px; }
+        .btn-outline-cyan { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); font-size: 14px; padding: 14px; border-radius: 12px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 15px; }
+        .match-input { background: #111; border: 1px solid #444; color: #FFF; border-radius: 12px; padding: 14px; width: 100%; box-sizing: border-box; margin-top: 15px; font-size: 14px; outline: none; }
+        .match-input::placeholder { color: #666; }
+
+        .sa-job-item { border-bottom: 1px solid #333; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .sa-job-item:last-child { border-bottom: none; }
+        .sa-job-no { color: #FFF; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+
+        /* Edit Profile */
+        .full-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 1500; display: none; overflow-y: auto; padding-bottom: 40px; }
+        .full-view.show { display: block; }
+        .ep-input { background: #444; border: none; border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #FFF; width: 100%; box-sizing: border-box;}
+        .divider { border-top: 1px dotted #777; margin: 25px 0; }
+        .checkbox-container { display: flex; align-items: center; gap: 10px; margin-top: 10px; cursor: pointer; }
+        .checkbox-container input { display: none; }
+        .checkmark { width: 22px; height: 22px; background: #FFF; border-radius: 4px; display: flex; justify-content: center; align-items: center; }
+        .checkbox-container input:checked + .checkmark::after { content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900; color: #000; font-size: 14px; }
+
+        .input-label { font-size: 10px; color: #FFF; text-transform: uppercase; margin-bottom: 6px; display: block; margin-top: 15px; font-weight: 600; }
+        input[type="text"], input[type="tel"], input[type="email"] { width: 100%; padding: 14px 16px; background: var(--input-bg); border: none; border-radius: 16px; color: #FFF; font-family: 'Inter', 'Kanit', sans-serif; font-size: 14px; outline: none; box-sizing: border-box; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 16px; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; box-sizing: border-box; }
+        .btn-pink { background: var(--accent-red); color: #FFF; }
+        .btn-outline { background: transparent; border: 1.5px solid #FFF; color: #FFF; }
+        .btn-green { background: #00E676; color: #000; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-box { width: 100%; max-width: 500px; background: #333; padding: 25px; border-radius: 20px; border: 1px solid #555; position: relative; max-height: 80vh; display: flex; flex-direction: column; }
+        .modal-content-scroll { overflow-y: auto; padding-right: 10px; margin-bottom: 20px; flex: 1; }
+        
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 3000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--text-main)"></i>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:10px;">Loading AWESOME.SCREEN...</div>
+    </div>
+
+    <div id="viewWelcome" class="content-area hidden" style="justify-content: center; align-items: center; min-height: 100vh; padding: 30px;">
+        <h2 style="margin: 0 0 10px 0; font-size: 28px;">Welcome</h2>
+        <div style="color: var(--text-muted); margin-bottom: 40px; font-size: 14px;">ลงทะเบียนเพื่อติดตามสถานะงานของคุณ</div>
+        <button class="btn btn-pink" onclick="showAuthView('viewRegister')">Sign Up (ลงทะเบียน)</button>
+    </div>
+
+    <div id="viewRegister" class="content-area hidden" style="padding-top: 60px;">
+        <h3 style="text-align: center; font-size:28px;">Create new<br>Account</h3>
+        <label class="input-label">NAME <span style="color:var(--accent-red);">*</span></label>
+        <input type="text" id="regName" placeholder="Your full name (ชื่อ-นามสกุล)">
+        <label class="input-label">BRAND / COMPANY NAME</label>
+        <input type="text" id="regBrand" placeholder="Your brand name">
+        <label class="input-label">PHONE NUMBER <span style="color:var(--accent-red);">*</span></label>
+        <input type="tel" id="regPhone" placeholder="08xxxxxxxx">
+        <label class="input-label">EMAIL ADDRESS <span style="color:var(--accent-red);">*</span></label>
+        <input type="email" id="regEmail" placeholder="your@email.com">
+        <button class="btn btn-outline" style="margin-top: 40px;" onclick="register()">Sign Up</button>
+    </div>
+
+    <div id="viewApp" class="hidden">
+        
+        <div class="overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <div class="sidebar" id="sidebarMenu">
+            <div class="sidebar-header">
+                <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            </div>
+            <div class="sidebar-menu" id="sidebarMenuCustomer">
+                <div class="sidebar-item" onclick="switchTab('Orders')"><i class="fas fa-list-alt"></i> Orders</div>
+                <div class="sidebar-item" onclick="switchTab('Profile')"><i class="fas fa-user"></i> Profile</div>
+            </div>
+            <div class="sidebar-menu hidden" id="sidebarMenuStaff">
+                <div class="sidebar-item" onclick="switchTab('Staff')" style="color:var(--accent-cyan);"><i class="fas fa-tasks"></i> SA Matching</div>
+            </div>
+        </div>
+
+        <div class="app-header">
+            <div>
+                <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="greeting-text">Welcome back</div>
+                <div class="user-name-display">
+                    <span id="headerName">User Name</span>
+                </div>
+                <div class="user-brand-display" id="headerBrand">Brand name</div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px;">
+                <img id="headerPic" src="https://via.placeholder.com/100" class="avatar-img">
+                <div id="headerRoleBadge" class="tier-badge">...</div>
+            </div>
+        </div>
+
+        <div id="bannerPending" style="display:none;">
+            <div class="pending-banner">
+                <h1>Pending<br>Match</h1>
+                <p>เรากำลังจับคู่ข้อมูลงานของคุณกับระบบ<br>กรุณารอการดำเนินการภายใน 24 ชม.</p>
+            </div>
+            <div class="status-tracker">
+                <div class="s-item done"><i class="fas fa-check-circle"></i> ลงทะเบียนสำเร็จ</div>
+                <div class="s-item doing"><i class="fas fa-clock"></i> รอ SA จับคู่งาน (SA Matching)</div>
+                <div class="s-item wait"><i class="fas fa-circle"></i> รับ Welcome Bubble บน LINE</div>
+            </div>
+        </div>
+
+        <div id="tabOrders" class="content-area" style="display:none;">
+            
+            <div id="latestOrderBanner" class="status-banner" style="display:none;">
+                <div style="font-size:12px; font-weight:600; color:#FFF; opacity:0.8;">Latest Order Process</div>
+                <div style="font-size:32px; font-weight:800; color:#FFF;" id="latestStage">In Production</div>
+                <div style="font-size:12px; color:#FFF; opacity:0.8;" id="latestJobNo">FAS...</div>
+                <div style="font-size:12px; color:#FFF; font-weight:700; margin-top:15px; text-align:right;">
+                    Estimated Delivery: <span id="latestDelivery" style="font-size:16px;">...</span>
+                </div>
+            </div>
+
+            <div class="flex-between" style="margin-bottom: 15px;">
+                <span style="font-weight: 700; font-size: 16px;">Transaction <span id="orderCount" style="color:#888;">(0)</span></span>
+                <span style="font-size: 12px; color: var(--text-muted);">Sort by Latest ▾</span>
+            </div>
+            <div id="orderListContainer"></div>
+        </div>
+
+        <div id="tabStaff" class="content-area" style="display:none; padding-top: 20px;">
+            <div class="flex-between" style="margin-bottom: 5px;">
+                <h3 style="color:var(--accent-cyan); margin:0; font-size:20px;">SA: Job Matching</h3>
+                <span style="background:var(--accent-cyan); color:#FFF; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">Staff</span>
+            </div>
+            <div style="font-size:13px; color:#888; border-bottom: 1px solid #333; padding-bottom: 20px;">จับคู่ลูกค้ากับเลขจ๊อบในระบบ</div>
+            
+            <div class="sa-stats-container">
+                <div class="sa-stat-box" id="boxStatPending" onclick="filterSADashboard('pending')">
+                    <div class="sa-stat-num" id="saStatPending" style="color:var(--accent-yellow);">0</div>
+                    <div class="sa-stat-label">รอจับคู่</div>
+                </div>
+                <div class="sa-stat-box" id="boxStatActive" onclick="filterSADashboard('active')">
+                    <div class="sa-stat-num" id="saStatActive" style="color:#00E676;">0</div>
+                    <div class="sa-stat-label">จับคู่แล้ว</div>
+                </div>
+                <div class="sa-stat-box" onclick="showAllMappedJobsModal()">
+                    <div class="sa-stat-num" id="saStatJobs" style="color:var(--accent-cyan);">0</div>
+                    <div class="sa-stat-label">งานที่ผูก (กดดู)</div>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="saSearchInput" class="match-search" oninput="applyFilters()" placeholder="ค้นหาชื่อ หรือ เบอร์โทรลูกค้า...">
+            </div>
+
+            <div id="saChipsContainer" class="chips-container hidden"></div>
+
+            <div id="saPendingSection" style="display:none;">
+                <div class="section-title-yellow">ลูกค้ารอจับคู่</div>
+                <div id="saPendingList"></div>
+            </div>
+            
+            <div id="saActiveSection" style="display:none; margin-top: 10px;">
+                <div class="section-title-green">ลูกค้าที่มีงานแล้ว (Active)</div>
+                <div id="saActiveList"></div>
+            </div>
+            
+            <div id="saEmptyState" style="display:none; text-align:center; color:#666; font-size:13px; padding:30px;">ไม่พบข้อมูลลูกค้าที่ค้นหา หรือพนักงานที่เลือก</div>
+        </div>
+
+        <div id="tabProfile" class="content-area" style="display:none;">
+            <div style="background:#5E5E5E; border-radius: 16px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; cursor: pointer;" onclick="openEditProfile()">
+                <div style="background: #7A7A7A; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--accent-red);"><i class="fas fa-pen"></i></div>
+                <div style="font-size: 16px; font-weight: bold; color: #FFF;">Edit Profile</div>
+            </div>
+            <h4 style="margin: 10px 0 15px 5px; color:var(--text-main); font-size:16px;">General Settings</h4>
+            <div style="background:#222; border:1px solid #333; border-radius: 16px; margin-bottom: 20px; overflow:hidden;">
+                <div style="padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #333; cursor: pointer;" onclick="openModal('modalAboutUs')">
+                    <div style="background: var(--accent-red); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #FFF;"><i class="fas fa-question"></i></div>
+                    <div style="color: #FFF; font-weight: 500; font-size:14px;">About us</div>
+                </div>
+                <div style="padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="openModal('modalTerms')">
+                    <div style="background: var(--accent-red); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #FFF;"><i class="fas fa-exclamation"></i></div>
+                    <div style="color: #FFF; font-weight: 500; font-size:14px;">Terms & Conditions</div>
+                </div>
+            </div>
+        </div>
+    </div> 
+
+    <div id="viewEditProfile" class="full-view" style="background-color: var(--bg-color);">
+        <div style="display: flex; align-items: center; padding:20px 20px 0 20px; position:sticky; top:0; background:var(--bg-color); z-index:910;">
+            <button style="background:none; border:none; color:#FFF; font-size:24px; cursor:pointer; margin-right:15px;" onclick="closeEditProfile()"><i class="fas fa-chevron-left"></i></button>
+            <h2 style="margin:0; font-size:22px; font-weight:bold;">Edit Profile</h2>
+        </div>
+        
+        <div style="padding: 20px;">
+            <label class="input-label" style="margin-top:0;">NAME*</label>
+            <input type="text" id="epName" class="ep-input">
+            <label class="input-label">BRAND NAME</label>
+            <input type="text" id="epBrand" class="ep-input">
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">PHONE*</label><input type="tel" id="epPhone" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">EMAIL*</label><input type="email" id="epEmail" class="ep-input"></div>
+            </div>
+            <label class="input-label">ADDRESS (ที่อยู่หลัก)*</label>
+            <input type="text" id="epAddress" class="ep-input">
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">CITY</label><input type="text" id="epCity" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">PROVINCE</label><input type="text" id="epProv" class="ep-input"></div>
+            </div>
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">ZIP</label><input type="text" id="epZip" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">COUNTRY</label><input type="text" id="epCountry" value="Thailand" class="ep-input"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div style="font-size: 13px; color: #FFF; font-weight: 600; margin-bottom: 10px;">BILLING ADDRESS (สำหรับออกบิล)</div>
+            <label class="checkbox-container" style="margin-bottom: 15px;">
+                <input type="checkbox" id="cbBillSameAsProfile" onchange="autoFillBilling()">
+                <div class="checkmark"></div>
+                <span style="font-size: 12px; color: #FFF;">ใช้ที่อยู่หลัก (Same as Profile Address)</span>
+            </label>
+
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">COMPANY NAME</label><input type="text" id="epBillCompany" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">PHONE</label><input type="tel" id="epBillPhone" class="ep-input"></div>
+            </div>
+            <label class="input-label">TAX ID</label>
+            <input type="text" id="epBillTax" class="ep-input">
+            <label class="input-label">ADDRESS</label>
+            <input type="text" id="epBillAddress" class="ep-input">
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">CITY</label><input type="text" id="epBillCity" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">PROVINCE</label><input type="text" id="epBillProv" class="ep-input"></div>
+            </div>
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">ZIP</label><input type="text" id="epBillZip" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">COUNTRY</label><input type="text" id="epBillCountry" value="Thailand" class="ep-input"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div style="font-size: 13px; color: #FFF; font-weight: 600; margin-bottom: 10px;">SHIPPING ADDRESS (สำหรับจัดส่งพัสดุ)</div>
+            <label class="checkbox-container">
+                <input type="checkbox" id="cbShipSameAsProfile" onchange="autoFillShipping('profile')">
+                <div class="checkmark"></div>
+                <span style="font-size: 12px; color: #FFF;">ใช้ที่อยู่หลัก</span>
+            </label>
+            <label class="checkbox-container" style="margin-bottom: 15px;">
+                <input type="checkbox" id="cbShipSameAsBill" onchange="autoFillShipping('bill')">
+                <div class="checkmark"></div>
+                <span style="font-size: 12px; color: #FFF;">ใช้ที่อยู่ออกบิล</span>
+            </label>
+
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">RECIPIENT NAME</label><input type="text" id="epShipName" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">PHONE</label><input type="tel" id="epShipPhone" class="ep-input"></div>
+            </div>
+            <label class="input-label">ADDRESS</label>
+            <input type="text" id="epShipAddress" class="ep-input">
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">CITY</label><input type="text" id="epShipCity" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">PROVINCE</label><input type="text" id="epShipProv" class="ep-input"></div>
+            </div>
+            <div class="flex-row">
+                <div style="flex:1;"><label class="input-label">ZIP</label><input type="text" id="epShipZip" class="ep-input"></div>
+                <div style="flex:1;"><label class="input-label">COUNTRY</label><input type="text" id="epShipCountry" value="Thailand" class="ep-input"></div>
+            </div>
+            <label class="input-label">LOCATION (ลิงก์ Google Maps / พิกัด)</label>
+            <input type="text" id="epLocation" class="ep-input">
+            
+            <div class="flex-row" style="margin-top:30px;">
+                <button class="btn" style="background:#111; border:1px solid #444; flex:1;" onclick="closeEditProfile()">Cancel</button>
+                <button class="btn btn-green" style="flex:2;" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalAboutUs" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex-between" style="margin-bottom: 15px;">
+                <h3 style="color:var(--accent-red); margin:0;">ABOUT US</h3>
+            </div>
+            <div class="modal-content-scroll">
+                <p style="font-size:13px; color:#DDD; line-height:1.6; text-indent: 20px; margin-top:0;">Welcome to AWESOME.SCREEN, our go-to destination for premium t-shirt screen printing services. As a fully serviced screen printing company, we take immense pride in offering top-quality custom designs exclusively on 100% cotton t-shirts.</p>
+            </div>
+            <button class="btn btn-pink" onclick="closeModal('modalAboutUs')">Close</button>
+        </div>
+    </div>
+
+    <div id="modalTerms" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex-between" style="margin-bottom: 15px;">
+                <h3 style="color:var(--accent-red); margin:0;">Terms & Conditions</h3>
+            </div>
+            <div class="modal-content-scroll" style="font-size:12px; color:#DDD; line-height:1.6;">
+                <strong>1. การยอมรับเงื่อนไข</strong><br>การที่คุณเข้าใช้งานผ่านระบบนี้ ถือว่าคุณตกลงตามเงื่อนไข<br><br>
+                <strong>2. ขอบเขตการให้บริการ</strong><br>เราพยายามอย่างเต็มที่เพื่อให้ระบบเสถียร แต่ไม่รับรองว่าบริการจะไม่มีการขัดข้อง<br><br>
+                <strong>3. ทรัพย์สินทางปัญญา</strong><br>เนื้อหาและซอฟต์แวร์ที่ปรากฏ เป็นลิขสิทธิ์ของบริษัท ห้ามนำไปใช้โดยไม่ได้รับอนุญาต
+            </div>
+            <button class="btn btn-pink" onclick="closeModal('modalTerms')">Close</button>
+        </div>
+    </div>
+
+    <div id="modalAllJobs" class="modal-overlay">
+        <div class="modal-box" style="padding: 15px;">
+            <div class="flex-between" style="margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom:10px;">
+                <h3 style="color:var(--accent-cyan); margin:0; font-size: 16px;">งานที่ผูกแล้วทั้งหมด</h3>
+                <button style="background:none; border:none; color:#FFF; font-size:18px; cursor:pointer;" onclick="closeModal('modalAllJobs')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-content-scroll" id="modalAllJobsList" style="max-height: 50vh;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        const GAS_API = 'https://script.google.com/macros/s/AKfycbx91ciiSJ37trbLiAfNy2iga5L5_Oh1cESnFRmbBaT7gXJUV1PoEIdDROMmRSEBlZcd/exec'; 
+        const LIFF_ID = '2010137466-HmdOphdP';
+        // =================================================
+
+        let userProfile = {};
+        let dbUserData = {};
+        let allCustomers = [];
+        
+        let selectedChips = []; 
+        let viewMode = 'all'; 
+
+        async function main() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                userProfile = await liff.getProfile();
+                initApp(userProfile.userId);
+            } catch(e) { console.error(e); }
+        }
+        main();
+
+        function callBackend(action, data, callback) {
+            fetch(GAS_API, { method: 'POST', body: JSON.stringify({ action: action, data: data }) })
+            .then(r => r.json())
+            .then(res => { if(callback) callback(res); })
+            .catch(e => { 
+                console.error(e);
+                document.getElementById('loader').classList.add('hidden'); 
+                alert("Error: " + e.message); 
+            });
+        }
+
+        function showAuthView(viewId) {
+            document.getElementById('viewWelcome').classList.add('hidden');
+            document.getElementById('viewRegister').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function initApp(userId) {
+            callBackend('init_app', { userId: userId }, (res) => {
+                document.getElementById('loader').classList.add('hidden');
+                if (res.found) {
+                    dbUserData = res.user;
+                    renderApp(res);
+                } else {
+                    showAuthView('viewWelcome');
+                }
+            });
+        }
+
+        function renderApp(res) {
+            document.getElementById('viewWelcome').classList.add('hidden');
+            document.getElementById('viewRegister').classList.add('hidden');
+            document.getElementById('viewApp').classList.remove('hidden');
+            
+            document.getElementById('headerName').innerText = dbUserData.realName;
+            document.getElementById('headerBrand').innerText = dbUserData.companyName || 'No Brand';
+            document.getElementById('headerPic').src = userProfile.pictureUrl || 'https://via.placeholder.com/100';
+            
+            if (res.isStaff) {
+                document.getElementById('headerRoleBadge').innerHTML = '<i class="fas fa-user-shield"></i> ' + dbUserData.role;
+                document.getElementById('headerRoleBadge').className = 'tier-badge';
+                
+                document.getElementById('sidebarMenuStaff').classList.remove('hidden');
+                document.getElementById('sidebarMenuCustomer').classList.add('hidden');
+                switchTab('Staff');
+                fetchSAData();
+            } else {
+                let tier = dbUserData.tier || 'REGULAR';
+                let tierClass = 'tier-' + tier.toLowerCase();
+                document.getElementById('headerRoleBadge').innerHTML = tier;
+                document.getElementById('headerRoleBadge').className = `badge-tier ${tierClass}`;
+                
+                document.getElementById('sidebarMenuCustomer').classList.remove('hidden');
+                
+                // 📌 ซ่อนแท็บ Orders เด็ดขาด ถ้ายังเป็นแค่ลูกค้ารอจับคู่ (ให้เห็นแค่ป้ายเหลือง)
+                if (dbUserData.status === 'pending_match') {
+                    document.getElementById('bannerPending').style.display = 'block';
+                    document.getElementById('tabOrders').style.display = 'none'; 
+                } else {
+                    document.getElementById('bannerPending').style.display = 'none';
+                    switchTab('Orders');
+                    renderOrders(res.jobs);
+                }
+            }
+        }
+
+        // ================= CUSTOMER VIEW =================
+        function getStageIndex(stage) {
+            const map = {'Order Received': 1, 'Preparation': 2, 'In Production': 3, 'Quality Check': 4, 'Delivered': 5};
+            return map[stage] || 0;
+        }
+
+        function getStageColor(stage) {
+            const map = {'Order Received':'#AEEA00', 'Preparation':'#FFCA28', 'In Production':'#B388FF', 'Quality Check':'#4FC3F7', 'Delivered':'#00E676'};
+            return map[stage] || '#888888';
+        }
+
+        function getBannerGradient(stage) {
+            const map = {
+                'Order Received': 'linear-gradient(135deg, #AEEA00, #689F38)', 
+                'Preparation': 'linear-gradient(135deg, #FFCA28, #F57C00)',   
+                'In Production': 'linear-gradient(135deg, #B388FF, #7E57C2)',  
+                'Quality Check': 'linear-gradient(135deg, #4FC3F7, #0277BD)',  
+                'Delivered': 'linear-gradient(135deg, #00E676, #00C853)'
+            };
+            return map[stage] || '#333';
+        }
+
+        function renderOrders(jobs) {
+            const container = document.getElementById('orderListContainer');
+            const banner = document.getElementById('latestOrderBanner');
+            document.getElementById('orderCount').innerText = `(${jobs.length})`;
+
+            if (!jobs || jobs.length === 0) {
+                container.innerHTML = '<div class="order-card text-center" style="color:#aaa; text-align:center;">ไม่มีรายการสั่งผลิต</div>';
+                banner.style.display = 'none';
+                return;
+            }
+
+            let sortedJobs = [...jobs].reverse(); 
+            let latest = sortedJobs[0];
+            banner.style.display = 'block';
+            banner.style.background = getBannerGradient(latest.customerStage);
+            document.getElementById('latestStage').innerText = latest.customerStage;
+            document.getElementById('latestJobNo').innerText = latest.jobNo;
+            document.getElementById('latestDelivery').innerText = latest.delivery || '-';
+
+            let html = '';
+            sortedJobs.forEach(job => {
+                const stageNum = getStageIndex(job.customerStage);
+                const sColor = getStageColor(job.customerStage);
+                let stepBars = ''; let stepLabels = '';
+                const stages = ['Order', 'Prep', 'Prod', 'QC', 'Ship'];
+                
+                for(let i=1; i<=5; i++) {
+                    let isActive = i <= stageNum;
+                    stepBars += `<div class="step-bar" style="background: ${isActive ? sColor : '#444'};"></div>`;
+                    stepLabels += `<div class="step-label" style="color: ${isActive ? sColor : '#666'};">${stages[i-1]}</div>`;
+                }
+
+                html += `
+                <div class="order-card" style="border: 1px solid ${sColor}40;">
+                    <div class="flex-between">
+                        <div><i class="fas fa-tshirt" style="color:${sColor}; margin-right:5px; font-size:16px;"></i><span style="color:#FFF; font-size:16px; font-weight:700;">${job.jobNo}</span></div>
+                        <div style="color:${sColor}; font-weight:700; font-size:12px;">${job.customerStage}</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span style="color:${sColor}; font-weight:700; font-size:14px;">${job.style || '-'}</span>
+                        <span style="color:#888; font-size:12px;"> (${job.qty || '-'} pcs)</span>
+                    </div>
+                    <div style="color:#888; font-size:11px; margin-top:2px;">Delivery: <span style="color:#FFF; font-weight:600;">${job.delivery || '-'}</span></div>
+                    <div style="margin-top:8px; font-size:11px; color:#aaa;">สถานะปัจจุบัน: <span style="color:${sColor};">${job.internalStatus}</span></div>
+                    <div class="step-bar-container">${stepBars}</div>
+                    <div class="step-label-container">${stepLabels}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // ================= STAFF VIEW =================
+        function fetchSAData() {
+            callBackend('get_sa_data', {}, (res) => {
+                if(res.status === 'success') {
+                    allCustomers = res.customers;
+                    document.getElementById('saStatPending').innerText = res.stats.pendingCust;
+                    document.getElementById('saStatActive').innerText = res.stats.activeCust;
+                    document.getElementById('saStatJobs').innerText = res.stats.totalJobs;
+                    
+                    if (dbUserData.role === 'Sales Coordinators' || dbUserData.role === 'Sales Manager' || dbUserData.role === 'Admin') {
+                        let uniqueSAs = new Set();
+                        allCustomers.forEach(c => c.jobs.forEach(j => { if(j.salesRep && j.salesRep !== '-') uniqueSAs.add(j.salesRep); }));
+                        let chipHTML = Array.from(uniqueSAs).map(sa => `<div class="chip" id="chip-${sa}" onclick="toggleChip('${sa}')">${sa}</div>`).join('');
+                        if (chipHTML) {
+                            document.getElementById('saChipsContainer').innerHTML = chipHTML;
+                            document.getElementById('saChipsContainer').classList.remove('hidden');
+                        }
+                    }
+                    applyFilters();
+                }
+            });
+        }
+
+        function toggleChip(saName) {
+            const idx = selectedChips.indexOf(saName);
+            if (idx > -1) { selectedChips.splice(idx, 1); document.getElementById(`chip-${saName}`).classList.remove('active'); }
+            else { selectedChips.push(saName); document.getElementById(`chip-${saName}`).classList.add('active'); }
+            applyFilters();
+        }
+
+        function filterSADashboard(mode) {
+            viewMode = (viewMode === mode) ? 'all' : mode; 
+            document.getElementById('boxStatPending').classList.remove('active');
+            document.getElementById('boxStatActive').classList.remove('active');
+            if(viewMode === 'pending') document.getElementById('boxStatPending').classList.add('active');
+            if(viewMode === 'active') document.getElementById('boxStatActive').classList.add('active');
+            applyFilters();
+        }
+
+        // 📌 ฟังก์ชันกรองข้อมูลแบบใหม่ ที่ค้นหาจากชื่อลูกค้า และค้นหาชื่อ SA (ชื่อเล่น)
+        function applyFilters() {
+            const query = document.getElementById('saSearchInput').value.toLowerCase().trim();
+            const validData = allCustomers.filter(c => c.lineUserId);
+            
+            let filteredData = validData.map(cust => {
+                let nameMatch = (cust.realName || '').toLowerCase().includes(query) || (cust.phone || '').includes(query);
+                
+                if (query !== '' && !nameMatch) return null;
+
+                if (viewMode === 'pending' && cust.status !== 'pending_match') return null;
+                if (viewMode === 'active' && cust.status === 'pending_match') return null;
+
+                if (cust.status === 'active') {
+                    let allowedJobs = [];
+                    if (dbUserData.role === 'Sales Admin') {
+                        // 📌 ใช้ตัวแปร saName (หรือ realName ถ้ายิงไม่ได้กรอก) ในการหา
+                        let saKey = (dbUserData.saName || dbUserData.realName).toLowerCase().trim();
+                        allowedJobs = cust.jobs.filter(j => j.salesRep.toLowerCase().includes(saKey) || saKey.includes(j.salesRep.toLowerCase()));
+                    } else if (selectedChips.length > 0) {
+                        allowedJobs = cust.jobs.filter(j => selectedChips.includes(j.salesRep));
+                    } else {
+                        allowedJobs = cust.jobs; 
+                    }
+                    
+                    if (allowedJobs.length === 0 && query === '') return null; 
+                    
+                    return { ...cust, jobs: allowedJobs };
+                }
+                return cust;
+            }).filter(c => c !== null);
+
+            renderSAMatchList(filteredData);
+        }
+
+        function renderSAMatchList(data) {
+            const pendingList = document.getElementById('saPendingList');
+            const activeList = document.getElementById('saActiveList');
+            
+            if(data.length === 0) {
+                document.getElementById('saEmptyState').style.display = 'block';
+                document.getElementById('saPendingSection').style.display = 'none';
+                document.getElementById('saActiveSection').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('saEmptyState').style.display = 'none';
+            let pHTML = ''; let aHTML = '';
+            let hasP = false; let hasA = false;
+
+            data.forEach(cust => {
+                let tierClass = 'tier-' + (cust.tier || 'regular').toLowerCase();
+                let tierBadge = `<span class="badge-tier-small ${tierClass}">${cust.tier}</span>`;
+
+                if (cust.status === 'pending_match') {
+                    hasP = true;
+                    pHTML += `
+                    <div class="sa-card pending">
+                        <div class="flex-between">
+                            <h4 style="margin:0; font-size:16px; color:#FFF;">${cust.realName} ${tierBadge}</h4>
+                            <div class="badge-yellow">รอจับคู่</div>
+                        </div>
+                        <div style="font-size:11px; color:#888; margin-top:4px;">${cust.companyName || '-'} • ${cust.phone}<br>ลงทะเบียน ${cust.registeredAt || '-'}</div>
+                        <div id="box-${cust.lineUserId}" style="display:none;"><input type="text" id="match-jobs-${cust.lineUserId}" class="match-input" placeholder="ใส่เลขจ๊อบ (เช่น FAS01, TSH02)"><button class="btn-cyan" onclick="confirmMatch('${cust.lineUserId}')">ยืนยันจับคู่</button></div>
+                        <button class="btn-cyan" id="btn-${cust.lineUserId}" onclick="showSAInput('${cust.lineUserId}')">+ จับคู่กับเลขจ๊อบ</button>
+                    </div>`;
+                } else {
+                    hasA = true;
+                    let jH = cust.jobs.length > 0 ? cust.jobs.map(j => `
+                        <div class="sa-job-item">
+                            <div><div class="sa-job-no">${j.jobNo}</div><div style="font-size:10px; font-weight:bold; color:#CCC;">SA: ${j.salesRep}</div></div>
+                            <div style="font-size:11px; font-weight:bold; color:${getStageColor(j.stage)}">${j.stage}</div>
+                        </div>`).join('') : '<div style="color:#666; font-size:11px; padding:10px 0;">ไม่มีงานที่คุณดูแลอยู่</div>';
+                    
+                    aHTML += `
+                    <div class="sa-card active">
+                        <div class="flex-between">
+                            <h4 style="margin:0; font-size:16px; color:#FFF;">${cust.realName} ${tierBadge}</h4>
+                            <div class="badge-green">Active</div>
+                        </div>
+                        <div style="font-size:11px; color:#888; margin-top:4px; margin-bottom:10px;">${cust.companyName || '-'} • ${cust.phone}</div>
+                        <div style="background:#1A1A1A; border-radius:8px; padding:0 12px;">${jH}</div>
+                        <div id="box-${cust.lineUserId}" style="display:none;"><input type="text" id="match-jobs-${cust.lineUserId}" class="match-input" placeholder="ใส่เลขจ๊อบใหม่"><button class="btn-cyan" onclick="confirmMatch('${cust.lineUserId}')">ยืนยันเพิ่มงาน</button></div>
+                        <button class="btn-outline-cyan" id="btn-${cust.lineUserId}" onclick="showSAInput('${cust.lineUserId}')">+ เพิ่มงานให้ลูกค้านี้</button>
+                    </div>`;
+                }
+            });
+
+            pendingList.innerHTML = pHTML; activeList.innerHTML = aHTML;
+            document.getElementById('saPendingSection').style.display = hasP ? 'block' : 'none';
+            document.getElementById('saActiveSection').style.display = hasA ? 'block' : 'none';
+        }
+
+        function showSAInput(uid) { document.getElementById(`box-${uid}`).style.display = 'block'; document.getElementById(`btn-${uid}`).style.display = 'none'; }
+        
+        function confirmMatch(uid) {
+            const val = document.getElementById(`match-jobs-${uid}`).value;
+            if(!val) return alert("กรุณาระบุเลขจ๊อบ");
+            const jobs = val.split(',').map(j => j.trim()).filter(j => j);
+            document.getElementById('loader').classList.remove('hidden');
+            callBackend('match_jobs', { lineUserId: uid, jobNos: jobs, staffName: dbUserData.realName }, (res) => {
+                document.getElementById('loader').classList.add('hidden');
+                if(res.status === 'success') { alert("ดำเนินการสำเร็จ!"); fetchSAData(); }
+            });
+        }
+
+        function showAllMappedJobsModal() {
+            let html = '';
+            let totalJobs = 0;
+            allCustomers.forEach(c => {
+                if(c.jobs && c.jobs.length > 0) {
+                    let allowedJobs = c.jobs;
+                    if (dbUserData.role === 'Sales Admin') {
+                        let saKey = (dbUserData.saName || dbUserData.realName).toLowerCase().trim();
+                        allowedJobs = c.jobs.filter(j => j.salesRep.toLowerCase().includes(saKey) || saKey.includes(j.salesRep.toLowerCase()));
+                    } else if (selectedChips.length > 0) {
+                        allowedJobs = c.jobs.filter(j => selectedChips.includes(j.salesRep));
+                    }
+
+                    if(allowedJobs.length > 0) {
+                        totalJobs += allowedJobs.length;
+                        html += `<div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:10px;">
+                            <div style="font-size:12px; font-weight:bold; color:#FFF; margin-bottom:5px;">👤 ${c.realName}</div>`;
+                        allowedJobs.forEach(j => {
+                            html += `<div class="flex-between" style="font-size:11px; padding: 2px 0;">
+                                <span style="color:#888;">${j.jobNo}</span>
+                                <span style="color:${getStageColor(j.stage)}">${j.stage}</span>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    }
+                }
+            });
+            if(html === '') html = '<div style="text-align:center; color:#666; font-size:12px;">ไม่มีรายการงาน</div>';
+            document.getElementById('modalAllJobsList').innerHTML = html;
+            openModal('modalAllJobs');
+        }
+
+        // ================= PROFILE & UTILS =================
+        function register() { 
+            const data = { userId: userProfile.userId, realName: document.getElementById('regName').value, brandName: document.getElementById('regBrand').value, phone: document.getElementById('regPhone').value, email: document.getElementById('regEmail').value };
+            if(!data.realName || !data.phone || !data.email) return alert("กรุณากรอกข้อมูลให้ครบถ้วน"); 
+            document.getElementById('loader').classList.remove('hidden');
+            callBackend('register', data, (res) => { if(res.status === 'success') location.reload(); }); 
+        }
+
+        function openEditProfile() {
+            document.getElementById('epName').value = dbUserData.realName || '';
+            document.getElementById('epBrand').value = dbUserData.companyName || '';
+            document.getElementById('epPhone').value = dbUserData.phone || '';
+            document.getElementById('epEmail').value = dbUserData.email || '';
+            document.getElementById('epAddress').value = dbUserData.profileAddress || '';
+            document.getElementById('epCity').value = dbUserData.profileCity || '';
+            document.getElementById('epProv').value = dbUserData.profileProvince || '';
+            document.getElementById('epZip').value = dbUserData.profileZip || '';
+            document.getElementById('epCountry').value = dbUserData.profileCountry || 'Thailand';
+            document.getElementById('epBillCompany').value = dbUserData.billCompany || '';
+            document.getElementById('epBillPhone').value = dbUserData.billPhone || '';
+            document.getElementById('epBillTax').value = dbUserData.billTaxId || '';
+            document.getElementById('epBillAddress').value = dbUserData.billAddress || '';
+            document.getElementById('epBillCity').value = dbUserData.billCity || '';
+            document.getElementById('epBillProv').value = dbUserData.billProvince || '';
+            document.getElementById('epBillZip').value = dbUserData.billZip || '';
+            document.getElementById('epBillCountry').value = dbUserData.billCountry || 'Thailand';
+            document.getElementById('epShipName').value = dbUserData.shipName || '';
+            document.getElementById('epShipPhone').value = dbUserData.shipPhone || '';
+            document.getElementById('epShipAddress').value = dbUserData.shipAddress || '';
+            document.getElementById('epShipCity').value = dbUserData.shipCity || '';
+            document.getElementById('epShipProv').value = dbUserData.shipProvince || '';
+            document.getElementById('epShipZip').value = dbUserData.shipZip || '';
+            document.getElementById('epShipCountry').value = dbUserData.shipCountry || 'Thailand';
+            document.getElementById('epLocation').value = dbUserData.shipLocation || '';
+
+            document.getElementById('viewApp').classList.add('hidden');
+            document.getElementById('viewEditProfile').classList.add('show');
+            window.scrollTo(0,0);
+        }
+
+        function closeEditProfile() { document.getElementById('viewEditProfile').classList.remove('show'); document.getElementById('viewApp').classList.remove('hidden'); }
+
+        function saveProfile() {
+            const payload = {
+                userId: userProfile.userId,
+                realName: document.getElementById('epName').value,
+                brandName: document.getElementById('epBrand').value,
+                phone: document.getElementById('epPhone').value,
+                email: document.getElementById('epEmail').value,
+                address: document.getElementById('epAddress').value,
+                city: document.getElementById('epCity').value,
+                prov: document.getElementById('epProv').value,
+                zip: document.getElementById('epZip').value,
+                country: document.getElementById('epCountry').value,
+                billCompany: document.getElementById('epBillCompany').value,
+                billPhone: document.getElementById('epBillPhone').value,
+                billTaxId: document.getElementById('epBillTax').value,
+                billAddress: document.getElementById('epBillAddress').value,
+                billCity: document.getElementById('epBillCity').value,
+                billProvince: document.getElementById('epBillProv').value,
+                billZip: document.getElementById('epBillZip').value,
+                billCountry: document.getElementById('epBillCountry').value,
+                shipName: document.getElementById('epShipName').value,
+                shipPhone: document.getElementById('epShipPhone').value,
+                shipAddress: document.getElementById('epShipAddress').value,
+                shipCity: document.getElementById('epShipCity').value,
+                shipProvince: document.getElementById('epShipProv').value,
+                shipZip: document.getElementById('epShipZip').value,
+                shipCountry: document.getElementById('epShipCountry').value,
+                shipLocation: document.getElementById('epLocation').value
+            };
+            if(!payload.realName || !payload.phone || !payload.email) return alert("กรุณากรอกข้อมูลส่วนตัว (Name, Phone, Email) ให้ครบถ้วน");
+
+            document.getElementById('loader').classList.remove('hidden');
+            callBackend('update_profile', payload, (res) => {
+                if(res.status === 'success') { alert("บันทึกข้อมูลเรียบร้อยแล้ว!"); location.reload(); }
+                else { document.getElementById('loader').classList.add('hidden'); alert("Error: " + res.message); }
+            });
+        }
+
+        function autoFillBilling() {
+            if (document.getElementById('cbBillSameAsProfile').checked) {
+                document.getElementById('epBillCompany').value = document.getElementById('epName').value;
+                document.getElementById('epBillPhone').value = document.getElementById('epPhone').value;
+                document.getElementById('epBillAddress').value = document.getElementById('epAddress').value;
+                document.getElementById('epBillCity').value = document.getElementById('epCity').value;
+                document.getElementById('epBillProv').value = document.getElementById('epProv').value;
+                document.getElementById('epBillZip').value = document.getElementById('epZip').value;
+                document.getElementById('epBillCountry').value = document.getElementById('epCountry').value;
+            }
+        }
+
+        function autoFillShipping(source) {
+            if (source === 'profile' && document.getElementById('cbShipSameAsProfile').checked) {
+                document.getElementById('cbShipSameAsBill').checked = false;
+                document.getElementById('epShipName').value = document.getElementById('epName').value;
+                document.getElementById('epShipPhone').value = document.getElementById('epPhone').value;
+                document.getElementById('epShipAddress').value = document.getElementById('epAddress').value;
+                document.getElementById('epShipCity').value = document.getElementById('epCity').value;
+                document.getElementById('epShipProv').value = document.getElementById('epProv').value;
+                document.getElementById('epShipZip').value = document.getElementById('epZip').value;
+                document.getElementById('epShipCountry').value = document.getElementById('epCountry').value;
+            } else if (source === 'bill' && document.getElementById('cbShipSameAsBill').checked) {
+                document.getElementById('cbShipSameAsProfile').checked = false;
+                document.getElementById('epShipName').value = document.getElementById('epBillCompany').value || document.getElementById('epName').value;
+                document.getElementById('epShipPhone').value = document.getElementById('epBillPhone').value;
+                document.getElementById('epShipAddress').value = document.getElementById('epBillAddress').value;
+                document.getElementById('epShipCity').value = document.getElementById('epBillCity').value;
+                document.getElementById('epShipProv').value = document.getElementById('epBillProv').value;
+                document.getElementById('epShipZip').value = document.getElementById('epBillZip').value;
+                document.getElementById('epShipCountry').value = document.getElementById('epBillCountry').value;
+            }
+        }
+
+        function toggleSidebar() { document.getElementById('sidebarMenu').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
+        
+        function switchTab(tabId) {
+            ['Orders', 'Staff', 'Profile'].forEach(id => { 
+                let el = document.getElementById('tab' + id); if (el) el.style.display = 'none';
+            });
+            let tEl = document.getElementById('tab' + tabId); if (tEl) tEl.style.display = 'block';
+            document.getElementById('sidebarMenu').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    </script>
+</body>
+</html>
