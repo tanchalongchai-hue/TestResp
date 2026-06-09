@@ -3,875 +3,910 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AWESOME.SCREEN</title>
+    <title>SSP Compressor Part</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root { 
-            --bg-color: #191919; 
-            --card-bg: #222222; 
-            --input-bg: #333333; 
-            --text-main: #FFFFFF; 
-            --text-muted: #AAAAAA;
-            --accent-green: #AEEA00; 
-            --accent-red: #FF4D6D; 
-            --accent-cyan: #00B9F2;
-            --accent-yellow: #FFC107;
-            --border-color: #333333;
-            --sidebar-bg: #D9D9D9; 
+            --bg-color: #F3F4F9; /* สีพื้นหลังนุ่มนวลตามภาพตัวอย่าง */
+            --card-bg: #FFFFFF; 
+            --input-bg: #FFFFFF; 
+            --text-main: #1F2937; 
+            --text-muted: #9CA3AF; 
+            --accent-primary: #00AEEF; /* สีฟ้าตาม CI โลโก้ SSP */
+            --accent-secondary: #ED1C24; /* สีแดงตาม CI โลโก้ SSP */
+            --accent-dark: #111111; 
+            --accent-green: #10B981; 
+            --accent-yellow: #F59E0B; 
+            --border-color: #E5E7EB; 
+            --sidebar-bg: #FFFFFF; 
+            --sidebar-text: #1F2937;
+            /* เพิ่มตัวแปรสำหรับควบคุมเงาให้นุ่มนวลสไตล์ Soft UI */
+            --soft-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            --focus-shadow: 0 0 0 3px rgba(0, 174, 239, 0.15);
         }
 
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Inter', 'Kanit', sans-serif; margin: 0; padding: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         .hidden { display: none !important; }
-        .flex-row { display: flex; gap: 10px; }
+        .flex-row { display: flex; gap: 12px; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         
-        /* --- Sidebar & Header --- */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 998; display: none; transition: 0.3s; }
-        .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--sidebar-bg); z-index: 1000; transition: 0.3s ease-in-out; display: flex; flex-direction: column; border-top-right-radius: 20px; border-bottom-right-radius: 20px; }
+        /* --- Container จัดรูปทรงอุปกรณ์เคลื่อนที่ --- */
+        .app-container { max-width: 480px; margin: 0 auto; background: var(--bg-color); min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+        /* --- Topbar & Sidebar Style --- */
+        .topbar { position: sticky; top: 0; left: 0; width: 100%; height: 60px; background: transparent; display: flex; align-items: center; justify-content: center; z-index: 900; }
+        .menu-btn { position: absolute; left: 24px; top: 16px; background: #FFF; color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; border: none; box-shadow: var(--soft-shadow); }
+        
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.4); z-index: 998; display: none; backdrop-filter: blur(4px); }
+        .overlay.show { display: block; }
+        .sidebar { position: fixed; top: 0; left: -290px; width: 270px; height: 100%; background: var(--sidebar-bg); z-index: 1000; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; border-top-right-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
         .sidebar.open { left: 0; }
-        .sidebar-header { padding: 20px 20px 10px 20px; }
-        .menu-btn { background: transparent; color: #FFF; width: 36px; height: 36px; border: 1px solid #FFF; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; }
-        .sidebar .menu-btn { background: #FFF; color: #000; border: none; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .sidebar-menu { flex: 1; padding: 10px 25px; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-item { display: flex; align-items: center; gap: 15px; color: #111; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .sidebar-header { padding: 24px 24px 12px 24px; }
+        .sidebar-menu { flex: 1; padding: 12px 24px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-item { display: flex; align-items: center; gap: 16px; color: var(--sidebar-text); font-size: 15px; font-weight: 600; cursor: pointer; padding: 12px 16px; border-radius: 14px; transition: 0.2s; }
+        .sidebar-item:hover { background: #F3F4F6; }
+        .sidebar-item i { font-size: 20px; width: 24px; text-align: center; color: var(--accent-primary); }
+        .sidebar-footer { padding: 24px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border-color); }
+        .sidebar-user { display: flex; align-items: center; gap: 12px; }
+        .sidebar-user img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .sidebar-user-info { display: flex; flex-direction: column; }
+        .sidebar-user-info .name { color: var(--text-main); font-size: 14px; font-weight: 700; }
+        .sidebar-user-info .id { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+        .sidebar-powered { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+
+        /* --- Modern App Header (Profile Area) --- */
+        .app-header { padding: 24px 24px 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .greeting-text { font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .user-name-display { font-size: 22px; font-weight: 700; color: var(--text-main); margin-top: 2px; }
+        .user-id-display { font-size: 12px; font-weight: 600; color: var(--accent-primary); background: rgba(0, 174, 239, 0.08); padding: 4px 10px; border-radius: 8px; display: inline-block; margin-top: 6px; }
+        .avatar-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: var(--soft-shadow); background: #FFF; border: 2px solid #FFF; }
+
+        /* --- Status Cards & List Layout --- */
+        .status-banner { margin: 12px 24px; padding: 20px; border-radius: 20px; color: #FFF; box-shadow: var(--soft-shadow); background: linear-gradient(135deg, var(--accent-primary), #008CBA); position: relative; overflow: hidden; }
+        .status-banner::before { content: ''; position: absolute; top: -50%; right: -20%; width: 160px; height: 160px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; }
         
-        .app-header { padding: 20px 30px 20px 30px; display: flex; justify-content: space-between; align-items: flex-start; }
-        .greeting-text { font-size: 26px; font-weight: 800; background: linear-gradient(90deg, #FFC107, #FF4D6D, #00B9F2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px; margin-top:15px; }
-        .user-name-display { font-size: 18px; font-weight: 700; color: #FFF; display: flex; align-items: center; gap: 8px; }
-        .user-brand-display { font-size: 14px; font-weight: 500; color: var(--text-muted); }
-        .avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+        /* --- Dashboard Grid (2x2 Card Matrix) --- */
+        .nav-squares { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 12px 24px; margin-bottom: 12px; }
+        .nav-sq { background: var(--card-bg); border-radius: 20px; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); border: none; box-shadow: var(--soft-shadow); }
+        .nav-sq i { font-size: 28px; color: var(--text-muted); margin-bottom: 12px; transition: 0.2s; }
+        .nav-sq span { font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .nav-sq:active { transform: scale(0.96); }
+        .nav-sq.active { background: var(--accent-primary); box-shadow: 0 12px 20px -5px rgba(0, 174, 239, 0.3); }
+        .nav-sq.active i, .nav-sq.active span { color: #FFFFFF !important; }
+
+        .staff-nav-btns { display: flex; gap: 16px; padding: 12px 24px; }
+        .s-btn { flex: 1; padding: 16px; border-radius: 18px; font-weight: 700; font-size: 14px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; box-shadow: var(--soft-shadow); transition: 0.2s; }
+        .s-btn-create { background: var(--accent-primary); color: #FFF; }
+        .s-btn-all { background: var(--accent-dark); color: #FFF; }
+        .s-btn-inactive { background: #FFF; color: var(--text-muted); box-shadow: var(--soft-shadow); }
+
+        .content-area { padding: 12px 24px 24px 24px; flex: 1; display: flex; flex-direction: column; }
+
+        /* --- Stats Layout --- */
+        .stats-container { display: flex; gap: 12px; margin-bottom: 16px; }
+        .stat-box { flex: 1; background: var(--card-bg); border-radius: 18px; padding: 20px 12px; text-align: center; box-shadow: var(--soft-shadow); }
+        .stat-num { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 6px; color: var(--text-main); }
+        .stat-label { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.3px; }
+
+        .global-footer { padding: 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(0,0,0,0.02); margin-top: auto; }
+        .global-footer img { width: 28px; height: 28px; border-radius: 50%; object-fit: contain; background-color: #FFF; }
+        .global-footer div { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+
+        /* --- Minimalist Form Control Styles --- */
+        .order-card { background: var(--card-bg); border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: var(--soft-shadow); border: none; }
+        .input-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; display: block; margin-top: 18px; font-weight: 700; }
+        input, select, textarea { width: 100%; padding: 14px 18px; background: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 14px; color: var(--text-main); font-family: 'Inter', 'Kanit', sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box; transition: all 0.2s ease; }
+        input:focus, select:focus, textarea:focus { background: #FFF; border-color: var(--accent-primary); box-shadow: var(--focus-shadow); }
+        .search-bar { flex: 1; background: #FFF; border-radius: 14px; padding: 12px 18px; display: flex; align-items: center; border: none; box-shadow: var(--soft-shadow); }
+        .search-bar input { background: transparent; border: none; color: var(--text-main); padding: 0; font-size: 14px; width: 100%; box-shadow: none; }
+        .search-bar input:focus { box-shadow: none; background: transparent; }
+
+        /* --- Premium Buttons --- */
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 16px; color: white; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s ease; box-sizing: border-box; }
+        .btn-outline { background: #FFF; border: 1.5px solid var(--accent-primary); color: var(--accent-primary); }
+        .btn-green { background: var(--accent-green); color: #FFF; box-shadow: 0 6px 12px rgba(16, 185, 129, 0.2); }
+        .btn-secondary { background: var(--accent-secondary); color: #FFF; box-shadow: 0 6px 12px rgba(237, 28, 36, 0.2); }
+        .btn-primary { background: var(--accent-primary); color: #FFF; box-shadow: 0 6px 16px rgba(0, 174, 239, 0.25); } 
+        .btn:disabled { background: #E5E7EB; color: #9CA3AF; cursor: not-allowed; box-shadow: none; }
+
+        .form-group { display: none; }
+        .form-group.always-show { display: block; }
+        .fade-in { animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .modal-center { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.5); z-index: 1001; display: none; justify-content: center; align-items: center; padding: 24px; box-sizing: border-box; backdrop-filter: blur(6px); }
+        .modal-center.show { display: flex; }
+        .modal-box { width: 100%; max-width: 440px; background: #FFF; padding: 28px; border-radius: 24px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); position: relative; max-height: 85vh; overflow-y: auto; }
         
-        /* 📌 จัดระเบียบ Badge ให้อยู่กึ่งกลางใต้รูปเสมอ */
-        .tier-badge { color: #FFF; font-size: 11px; font-weight: 700; text-align:center; }
-        .badge-tier { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; color: #FFF; text-transform: uppercase; display: inline-block; }
-        .tier-icon { background: linear-gradient(135deg, #FF4D6D, #D50000); }
-        .tier-vvip { background: linear-gradient(135deg, #FFD700, #F57F17); color: #000; }
-        .tier-vip { background: #FFC107; color: #000; }
-        .tier-member { background: #888888; }
-        .tier-regular { background: #444444; }
-
-        /* --- Content Areas --- */
-        .content-area { padding: 0 30px 20px 30px; min-height: calc(100vh - 350px); display: flex; flex-direction: column; }
-        
-        .pending-banner { background: #FFC107; border-radius: 20px; padding: 25px 20px; margin: 20px 30px; color: #000; }
-        .pending-banner h1 { font-size: 34px; font-weight: 900; margin: 0; line-height: 1.1; }
-        .status-tracker { background: #252525; border-radius: 16px; padding: 20px; margin: 0 30px 20px 30px; }
-        .s-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
-        .s-item.done { color: #00E676; }
-        .s-item.doing { color: #FFC107; }
-        .s-item.wait { color: #555; }
-
-        .status-banner { padding: 20px; border-radius: 16px; margin-bottom: 25px; position: relative; overflow: hidden; }
-        
-        .order-card { background: #2A2A2A; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #444; }
-        .step-bar-container { display: flex; justify-content: space-between; gap: 4px; margin-top: 15px; }
-        .step-bar { flex: 1; height: 4px; border-radius: 2px; }
-        .step-label-container { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9px; font-weight: 600; text-align: center; }
-        .step-label { flex: 1; }
-
-        /* --- SA Job Matching UI --- */
-        .sa-stats-container { display: flex; gap: 10px; margin-bottom: 20px; margin-top: 20px; }
-        .sa-stat-box { flex: 1; background: #2A2A2A; border-radius: 12px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-        .sa-stat-box.active { border-color: var(--accent-cyan); background: #333; }
-        .sa-stat-num { font-size: 24px; font-weight: 700; margin-bottom: 2px; line-height: 1; }
-        .sa-stat-label { font-size: 11px; color: #888; font-weight: 500; }
-
-        .chips-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
-        .chips-container::-webkit-scrollbar { display: none; }
-        .chip { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #FFF; background: #333; border: 1px solid #444; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .chip.active { background: linear-gradient(90deg, #FF4D6D, #00B9F2); border-color: transparent; }
-
-        .search-container { position: relative; margin-bottom: 15px; }
-        .search-container i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px; pointer-events: none; }
-        .match-search { background: #333 !important; border: none !important; color: #FFF !important; border-radius: 16px !important; padding: 14px 15px 14px 45px !important; width: 100% !important; box-sizing: border-box !important; font-size: 14px !important; outline: none !important; }
-
-        .section-title-yellow { color: var(--accent-yellow); font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 10px; }
-        .section-title-green { color: #00E676; font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 10px; }
-
-        .sa-card { background: #222; border-left: 3px solid #555; padding: 15px; margin-bottom: 15px; border-radius: 12px; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
-        .sa-card.pending { border-left-color: var(--accent-yellow); }
-        .sa-card.active { border-left-color: #00E676; }
-
-        .badge-yellow { background: var(--accent-yellow); color: #000; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 12px; }
-        .badge-green { background: #00E676; color: #000; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 12px; }
-        .badge-tier-small { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; color: #FFF; display: inline-block; margin-left: 6px; vertical-align: middle; }
-
-        .btn-cyan { background: var(--accent-cyan); color: #FFF; font-size: 14px; padding: 14px; border-radius: 12px; width: 100%; border: none; font-weight: 700; cursor: pointer; margin-top: 15px; }
-        .btn-outline-cyan { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); font-size: 14px; padding: 14px; border-radius: 12px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 15px; }
-        .match-input { background: #111; border: 1px solid #444; color: #FFF; border-radius: 12px; padding: 14px; width: 100%; box-sizing: border-box; margin-top: 15px; font-size: 14px; outline: none; }
-        .match-input::placeholder { color: #666; }
-
-        .sa-job-item { border-bottom: 1px solid #333; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
-        .sa-job-item:last-child { border-bottom: none; }
-        .sa-job-no { color: #FFF; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-
-        /* Edit Profile */
-        .full-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 1500; display: none; overflow-y: auto; padding-bottom: 40px; }
-        .full-view.show { display: block; }
-        .ep-input { background: #444; border: none; border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #FFF; width: 100%; box-sizing: border-box;}
-        .divider { border-top: 1px dotted #777; margin: 25px 0; }
-        .checkbox-container { display: flex; align-items: center; gap: 10px; margin-top: 10px; cursor: pointer; }
-        .checkbox-container input { display: none; }
-        .checkmark { width: 22px; height: 22px; background: #FFF; border-radius: 4px; display: flex; justify-content: center; align-items: center; }
-        .checkbox-container input:checked + .checkmark::after { content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900; color: #000; font-size: 14px; }
-
-        .input-label { font-size: 10px; color: #FFF; text-transform: uppercase; margin-bottom: 6px; display: block; margin-top: 15px; font-weight: 600; }
-        input[type="text"], input[type="tel"], input[type="email"] { width: 100%; padding: 14px 16px; background: var(--input-bg); border: none; border-radius: 16px; color: #FFF; font-family: 'Inter', 'Kanit', sans-serif; font-size: 14px; outline: none; box-sizing: border-box; }
-        .btn { width: 100%; padding: 16px; border: none; border-radius: 16px; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; box-sizing: border-box; }
-        .btn-pink { background: var(--accent-red); color: #FFF; }
-        .btn-outline { background: transparent; border: 1.5px solid #FFF; color: #FFF; }
-        .btn-green { background: #00E676; color: #000; }
-
-        /* Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-box { width: 100%; max-width: 500px; background: #333; padding: 25px; border-radius: 20px; border: 1px solid #555; position: relative; max-height: 80vh; display: flex; flex-direction: column; }
-        .modal-content-scroll { overflow-y: auto; padding-right: 10px; margin-bottom: 20px; flex: 1; }
-        
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 3000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .preview-img { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border-color); }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--text-main)"></i>
-        <div style="font-size:12px; color:var(--text-muted); margin-top:10px;">Loading AWESOME.SCREEN...</div>
-    </div>
-
-    <div id="viewWelcome" class="content-area hidden" style="justify-content: center; align-items: center; min-height: 100vh; padding: 30px;">
-        <h2 style="margin: 0 0 10px 0; font-size: 28px;">Welcome</h2>
-        <div style="color: var(--text-muted); margin-bottom: 40px; font-size: 14px;">ลงทะเบียนเพื่อติดตามสถานะงานของคุณ</div>
-        <button class="btn btn-pink" onclick="showAuthView('viewRegister')">Sign Up (ลงทะเบียน)</button>
-    </div>
-
-    <div id="viewRegister" class="content-area hidden" style="padding-top: 60px;">
-        <h3 style="text-align: center; font-size:28px;">Create new<br>Account</h3>
-        <label class="input-label">NAME <span style="color:var(--accent-red);">*</span></label>
-        <input type="text" id="regName" placeholder="Your full name (ชื่อ-นามสกุล)">
-        <label class="input-label">BRAND / COMPANY NAME</label>
-        <input type="text" id="regBrand" placeholder="Your brand name">
-        <label class="input-label">PHONE NUMBER <span style="color:var(--accent-red);">*</span></label>
-        <input type="tel" id="regPhone" placeholder="08xxxxxxxx">
-        <label class="input-label">EMAIL ADDRESS <span style="color:var(--accent-red);">*</span></label>
-        <input type="email" id="regEmail" placeholder="your@email.com">
-        <button class="btn btn-outline" style="margin-top: 40px;" onclick="register()">Sign Up</button>
-    </div>
-
-    <div id="viewApp" class="hidden">
+    <div class="app-container">
         
-        <div class="overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-        <div class="sidebar" id="sidebarMenu">
-            <div class="sidebar-header">
-                <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            </div>
-            <div class="sidebar-menu" id="sidebarMenuCustomer">
-                <div class="sidebar-item" onclick="switchTab('Orders')"><i class="fas fa-list-alt"></i> Orders</div>
-                <div class="sidebar-item" onclick="switchTab('Profile')"><i class="fas fa-user"></i> Profile</div>
-            </div>
-            <div class="sidebar-menu hidden" id="sidebarMenuStaff">
-                <div class="sidebar-item" onclick="switchTab('Staff')" style="color:var(--accent-cyan);"><i class="fas fa-tasks"></i> SA Matching</div>
+        <div id="loader">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--accent-primary)"></i>
+            <div style="font-size:14px; color:var(--text-muted); margin-top:15px; font-weight: 600;">Connecting SSP System...</div>
+        </div>
+
+        <div id="submitOverlay">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--accent-primary)"></i>
+            <p style="margin-top: 16px; font-weight: 600; font-size: 16px; color: var(--text-main);">Processing Request...</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Please do not close this screen.</p>
+        </div>
+
+        <div id="viewWelcome" class="content-area hidden" style="justify-content: center; align-items: center; padding: 30px;">
+            <div style="background: #FFF; padding: 40px 30px; border-radius: 24px; box-shadow: var(--soft-shadow); width: 100%; text-align: center; box-sizing: border-box;">
+                <img id="logoWelcome" src="" alt="Logo" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 24px; box-shadow: var(--soft-shadow); object-fit: contain; background: #FFF; padding: 4px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 24px; color: var(--text-main); font-weight: 800;">SSP Compressor Part</h2>
+                <div style="color: var(--text-muted); margin-bottom: 40px; font-size: 14px; font-weight: 500;">Please choose an option to continue.</div>
+                <button class="btn btn-outline" style="margin-bottom: 16px;" onclick="showAuthView('viewLogin')">Log In</button>
+                <button class="btn btn-primary" onclick="showAuthView('viewRegister')">Sign Up</button>
             </div>
         </div>
 
-        <div class="app-header">
-            <div>
-                <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                <div class="greeting-text">Welcome back</div>
-                <div class="user-name-display">
-                    <span id="headerName">User Name</span>
+        <div id="viewLogin" class="content-area hidden" style="justify-content: center; align-items: center; padding: 30px;">
+            <div style="background: #FFF; padding: 35px 25px; border-radius: 24px; box-shadow: var(--soft-shadow); width: 100%; box-sizing: border-box; position: relative;">
+                <button style="position: absolute; top: 25px; left: 25px; background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;" onclick="showAuthView('viewWelcome')"><i class="fas fa-chevron-left"></i></button>
+                <div style="text-align: center; margin-top: 15px; margin-bottom: 20px;">
+                    <img id="logoLogin" src="" alt="Logo" style="width: 75px; height: 75px; border-radius: 50%; object-fit: contain; padding: 4px; background: #FFF; box-shadow: var(--soft-shadow);">
                 </div>
-                <div class="user-brand-display" id="headerBrand">Brand name</div>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px;">
-                <img id="headerPic" src="https://via.placeholder.com/100" class="avatar-img">
-                <div id="headerRoleBadge" class="tier-badge">...</div>
+                <h3 style="text-align: center; font-size:24px; margin-bottom: 5px; color: var(--text-main); font-weight: 800;">Login</h3>
+                <div style="text-align: center; font-size:14px; color:var(--text-muted); margin-bottom: 30px;">Sign in to continue.</div>
+                <label class="input-label">NAME</label>
+                <input type="text" id="loginName" placeholder="Your Full Name">
+                <label class="input-label">EMAIL</label>
+                <input type="email" id="loginEmail" placeholder="hello@company.com" style="margin-bottom: 24px;">
+                <button class="btn btn-primary" onclick="processLogin()">Sign in</button>
             </div>
         </div>
 
-        <div id="bannerPending" style="display:none;">
-            <div class="pending-banner">
-                <h1>Pending<br>Match</h1>
-                <p>เรากำลังจับคู่ข้อมูลงานของคุณกับระบบ<br>กรุณารอการดำเนินการภายใน 24 ชม.</p>
-            </div>
-            <div class="status-tracker">
-                <div class="s-item done"><i class="fas fa-check-circle"></i> ลงทะเบียนสำเร็จ</div>
-                <div class="s-item doing"><i class="fas fa-clock"></i> รอ SA จับคู่งาน (SA Matching)</div>
-                <div class="s-item wait"><i class="fas fa-circle"></i> รับ Welcome Bubble บน LINE</div>
+        <div id="viewRegister" class="content-area hidden" style="justify-content: center; align-items: center; padding: 30px;">
+            <div style="background: #FFF; padding: 35px 25px; border-radius: 24px; box-shadow: var(--soft-shadow); width: 100%; box-sizing: border-box; position: relative;">
+                <button style="position: absolute; top: 25px; left: 25px; background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;" onclick="showAuthView('viewWelcome')"><i class="fas fa-chevron-left"></i></button>
+                <div style="text-align: center; margin-top: 15px; margin-bottom: 20px;">
+                    <img id="logoRegister" src="" alt="Logo" style="width: 75px; height: 75px; border-radius: 50%; object-fit: contain; padding: 4px; background: #FFF; box-shadow: var(--soft-shadow);">
+                </div>
+                <h3 style="text-align: center; font-size:24px; margin-bottom: 5px; color: var(--text-main); font-weight: 800;">Create Account</h3>
+                <div style="text-align: center; font-size:13px; color:var(--text-muted); margin-bottom: 30px; font-weight:500;">Already Registered? <span style="color: var(--accent-primary); font-weight: 700; cursor: pointer;" onclick="showAuthView('viewLogin')">Log in here.</span></div>
+                <label class="input-label">EMPLOYEE ID (Optional)</label>
+                <input type="text" id="regEmpId" placeholder="EMP-001">
+                <label class="input-label">NAME - SURNAME</label>
+                <input type="text" id="regName" placeholder="Your full name" required>
+                <label class="input-label">PHONE NUMBER</label>
+                <input type="tel" id="regPhone" placeholder="08xxxxxxxx" style="margin-bottom: 24px;" required>
+                <button class="btn btn-primary" onclick="register()">Sign up</button>
             </div>
         </div>
 
-        <div id="tabOrders" class="content-area" style="display:none;">
-            
-            <div id="latestOrderBanner" class="status-banner" style="display:none;">
-                <div style="font-size:12px; font-weight:600; color:#FFF; opacity:0.8;">Latest Order Process</div>
-                <div style="font-size:32px; font-weight:800; color:#FFF;" id="latestStage">In Production</div>
-                <div style="font-size:12px; color:#FFF; opacity:0.8;" id="latestJobNo">FAS...</div>
-                <div style="font-size:12px; color:#FFF; font-weight:700; margin-top:15px; text-align:right;">
-                    Estimated Delivery: <span id="latestDelivery" style="font-size:16px;">...</span>
+        <div id="viewApp" class="hidden">
+            <div class="overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+            <div class="sidebar" id="sidebarMenu">
+                <div class="sidebar-header"><button class="menu-btn" style="position:static;" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button></div>
+                <div class="sidebar-menu" id="sidebarMenuCustomer">
+                    <div class="sidebar-item" onclick="switchTab('Orders')"><i class="fas fa-list-alt"></i> My Records</div>
+                    <div class="sidebar-item" onclick="switchTab('Overview')"><i class="fas fa-chart-pie"></i> Overview</div>
+                    <div class="sidebar-item" onclick="switchTab('Profile')"><i class="fas fa-user"></i> Profile</div>
+                </div>
+                <div class="sidebar-menu hidden" id="sidebarMenuStaff">
+                    <div class="sidebar-item" id="sidebarMenuCreate" onclick="switchTab('CreateOrder')" style="color:var(--accent-primary);"><i class="fas fa-plus-circle"></i> Create Entry</div>
+                    <div class="sidebar-item" onclick="switchTab('StaffOrders')" style="color:var(--accent-dark);"><i class="fas fa-tasks"></i> All Records</div>
+                </div>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <img src="https://via.placeholder.com/100" id="sidebarPic">
+                        <div class="sidebar-user-info">
+                            <div class="name" id="sidebarName">Name</div>
+                            <div class="id" id="sidebarRole">Role</div>
+                        </div>
+                    </div>
+                    <div class="sidebar-powered">SSP Compressor Part</div>
                 </div>
             </div>
 
-            <div class="flex-between" style="margin-bottom: 15px;">
-                <span style="font-weight: 700; font-size: 16px;">Transaction <span id="orderCount" style="color:#888;">(0)</span></span>
-                <span style="font-size: 12px; color: var(--text-muted);">Sort by Latest ▾</span>
-            </div>
-            <div id="orderListContainer"></div>
-        </div>
-
-        <div id="tabStaff" class="content-area" style="display:none; padding-top: 20px;">
-            <div class="flex-between" style="margin-bottom: 5px;">
-                <h3 style="color:var(--accent-cyan); margin:0; font-size:20px;">SA: Job Matching</h3>
-                <span style="background:var(--accent-cyan); color:#FFF; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">Staff</span>
-            </div>
-            <div style="font-size:13px; color:#888; border-bottom: 1px solid #333; padding-bottom: 20px;">จับคู่ลูกค้ากับเลขจ๊อบในระบบ</div>
-            
-            <div class="sa-stats-container">
-                <div class="sa-stat-box" id="boxStatPending" onclick="filterSADashboard('pending')">
-                    <div class="sa-stat-num" id="saStatPending" style="color:var(--accent-yellow);">0</div>
-                    <div class="sa-stat-label">รอจับคู่</div>
+            <div class="app-header">
+                <div>
+                    <button class="menu-btn" onclick="toggleSidebar()" style="position:relative; left:0; margin-bottom:12px;"><i class="fas fa-bars"></i></button>
+                    <div class="greeting-text">SSP System</div>
+                    <div class="user-name-display" id="headerName">User Name</div>
+                    <div class="user-id-display" id="headerRoleDisplay">Role</div> 
                 </div>
-                <div class="sa-stat-box" id="boxStatActive" onclick="filterSADashboard('active')">
-                    <div class="sa-stat-num" id="saStatActive" style="color:#00E676;">0</div>
-                    <div class="sa-stat-label">จับคู่แล้ว</div>
-                </div>
-                <div class="sa-stat-box" onclick="showAllMappedJobsModal()">
-                    <div class="sa-stat-num" id="saStatJobs" style="color:var(--accent-cyan);">0</div>
-                    <div class="sa-stat-label">งานที่ผูก</div>
+                <div class="avatar-container">
+                    <img id="headerPic" src="https://via.placeholder.com/100" class="avatar-img">
                 </div>
             </div>
 
-            <div class="search-container">
-                <i class="fas fa-search"></i>
-                <input type="text" id="saSearchInput" class="match-search" oninput="applyFilters()" placeholder="ค้นหาชื่อ หรือ เบอร์โทรลูกค้า...">
-            </div>
-
-            <div id="saChipsContainer" class="chips-container hidden"></div>
-
-            <div id="saPendingSection" style="display:none;">
-                <div class="section-title-yellow">ลูกค้ารอจับคู่</div>
-                <div id="saPendingList"></div>
-            </div>
-            
-            <div id="saActiveSection" style="display:none; margin-top: 10px;">
-                <div class="section-title-green">จับคู่แล้ว</div>
-                <div id="saActiveList"></div>
-            </div>
-            
-            <div id="saEmptyState" style="display:none; text-align:center; color:#666; font-size:13px; padding:30px;">ไม่พบข้อมูลลูกค้าที่ค้นหา หรือพนักงานที่เลือก</div>
-        </div>
-
-        <div id="tabProfile" class="content-area" style="display:none;">
-            <div style="background:#5E5E5E; border-radius: 16px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; cursor: pointer;" onclick="openEditProfile()">
-                <div style="background: #7A7A7A; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--accent-red);"><i class="fas fa-pen"></i></div>
-                <div style="font-size: 16px; font-weight: bold; color: #FFF;">Edit Profile</div>
-            </div>
-            <h4 style="margin: 10px 0 15px 5px; color:var(--text-main); font-size:16px;">General Settings</h4>
-            <div style="background:#222; border:1px solid #333; border-radius: 16px; margin-bottom: 20px; overflow:hidden;">
-                <div style="padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #333; cursor: pointer;" onclick="openModal('modalAboutUs')">
-                    <div style="background: var(--accent-red); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #FFF;"><i class="fas fa-question"></i></div>
-                    <div style="color: #FFF; font-weight: 500; font-size:14px;">About us</div>
+            <div id="customerElements" class="hidden">
+                <div id="statusBanner" class="status-banner hidden">
+                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; opacity: 0.9;">Latest Activity</div>
+                    <div style="font-size: 26px; font-weight: 800; line-height: 1.1; margin-bottom: 6px;" id="bannerStatusText">Status</div>
+                    <div style="font-size: 13px; font-weight: 600; opacity: 0.8;" id="bannerOrderNo">ID-000</div>
                 </div>
-                <div style="padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="openModal('modalTerms')">
-                    <div style="background: var(--accent-red); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #FFF;"><i class="fas fa-exclamation"></i></div>
-                    <div style="color: #FFF; font-weight: 500; font-size:14px;">Terms & Conditions</div>
+                <div class="nav-squares">
+                    <div class="nav-sq active" id="navSqOrders" onclick="switchTab('Orders')"><i class="fas fa-folder-open"></i><span>Records</span></div>
+                    <div class="nav-sq" id="navSqOverview" onclick="switchTab('Overview')"><i class="fas fa-chart-bar"></i><span>Overview</span></div>
+                    <div class="nav-sq" id="navSqCreateOrder" onclick="switchTab('CreateOrder')"><i class="fas fa-pen-nib"></i><span>New Entry</span></div>
+                    <div class="nav-sq" id="navSqProfile" onclick="switchTab('Profile')"><i class="fas fa-user-cog"></i><span>Profile</span></div>
                 </div>
             </div>
-        </div>
-    </div> 
 
-    <div id="viewEditProfile" class="full-view" style="background-color: var(--bg-color);">
-        <div style="display: flex; align-items: center; padding:20px 20px 0 20px; position:sticky; top:0; background:var(--bg-color); z-index:910;">
-            <button style="background:none; border:none; color:#FFF; font-size:24px; cursor:pointer; margin-right:15px;" onclick="closeEditProfile()"><i class="fas fa-chevron-left"></i></button>
-            <h2 style="margin:0; font-size:22px; font-weight:bold;">Edit Profile</h2>
-        </div>
-        
-        <div style="padding: 20px;">
-            <label class="input-label" style="margin-top:0;">NAME*</label>
-            <input type="text" id="epName" class="ep-input">
-            <label class="input-label">BRAND NAME</label>
-            <input type="text" id="epBrand" class="ep-input">
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">PHONE*</label><input type="tel" id="epPhone" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">EMAIL*</label><input type="email" id="epEmail" class="ep-input"></div>
-            </div>
-            <label class="input-label">ADDRESS (ที่อยู่หลัก)*</label>
-            <input type="text" id="epAddress" class="ep-input">
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">CITY</label><input type="text" id="epCity" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">PROVINCE</label><input type="text" id="epProv" class="ep-input"></div>
-            </div>
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">ZIP</label><input type="text" id="epZip" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">COUNTRY</label><input type="text" id="epCountry" value="Thailand" class="ep-input"></div>
+            <div id="staffElements" class="hidden" style="margin-top: 12px;">
+                <div class="staff-nav-btns">
+                    <div class="s-btn s-btn-create" id="navBtnCreate" onclick="switchTab('CreateOrder')"><i class="fas fa-plus"></i> Create Entry</div>
+                    <div class="s-btn s-btn-all" id="navBtnAll" onclick="switchTab('StaffOrders')"><i class="fas fa-tasks"></i> All Records</div>
+                </div>
             </div>
 
-            <div class="divider"></div>
+            <div id="tabCreateOrder" class="content-area hidden fade-in">
+                <div class="order-card">
+                    <h4 style="margin-top:0; color:var(--accent-primary); border-bottom:1px solid var(--border-color); padding-bottom:15px; font-size: 16px; font-weight: 800;">Select Work Type</h4>
+                    <label class="input-label">ประเภทการทำรายการ</label>
+                    <select id="sheetSelector" onchange="triggerFormFields()">
+                        <option value="" disabled selected>-- กรุณาเลือก --</option>
+                    </select>
+                </div>
 
-            <div style="font-size: 13px; color: #FFF; font-weight: 600; margin-bottom: 10px;">BILLING ADDRESS (สำหรับออกบิล)</div>
-            <label class="checkbox-container" style="margin-bottom: 15px;">
-                <input type="checkbox" id="cbBillSameAsProfile" onchange="autoFillBilling()">
-                <div class="checkmark"></div>
-                <span style="font-size: 12px; color: #FFF;">ใช้ที่อยู่หลัก (Same as Profile Address)</span>
-            </label>
+                <form id="mainForm" style="display:none;" class="fade-in">
+                    <div class="order-card">
+                        <h4 style="margin-top:0; color:var(--text-main); font-size: 16px; font-weight: 800; margin-bottom: 20px;" id="formTitleTitle">Data Entry</h4>
 
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">COMPANY NAME</label><input type="text" id="epBillCompany" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">PHONE</label><input type="tel" id="epBillPhone" class="ep-input"></div>
-            </div>
-            <label class="input-label">TAX ID</label>
-            <input type="text" id="epBillTax" class="ep-input">
-            <label class="input-label">ADDRESS</label>
-            <input type="text" id="epBillAddress" class="ep-input">
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">CITY</label><input type="text" id="epBillCity" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">PROVINCE</label><input type="text" id="epBillProv" class="ep-input"></div>
-            </div>
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">ZIP</label><input type="text" id="epBillZip" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">COUNTRY</label><input type="text" id="epBillCountry" value="Thailand" class="ep-input"></div>
+                        <div class="form-group" data-show="ลงงานช่าง,claim ของ,คืนของ,ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">ชื่อลูกค้า / บริษัท</label>
+                            <input type="text" id="customerName">
+                        </div>
+                        <div class="form-group" data-show="claim ของ,คืนของ">
+                            <label class="input-label">ผู้ติดต่อ (Contact Person)</label>
+                            <input type="text" id="contactPerson">
+                        </div>
+                        <div class="form-group" data-show="claim ของ,คืนของ,ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">เบอร์โทรศัพท์ลูกค้า</label>
+                            <input type="tel" id="phone">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">เบอร์โทรติดต่อหน้างาน</label>
+                            <input type="tel" id="onsitePhone">
+                        </div>
+                        <div class="form-group" data-show="ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">ชื่อผู้แจ้ง (พนักงาน/เซลส์)</label>
+                            <input type="text" id="requesterName">
+                        </div>
+
+                        <div class="form-group" data-show="ลงงานช่าง,ข้อมูลเครื่อง">
+                            <label class="input-label">รหัสเครื่อง / Serial No.</label>
+                            <input type="text" id="machineId">
+                        </div>
+                        <div class="form-group" data-show="claim ของ,ข้อมูลเครื่อง">
+                            <label class="input-label">ยี่ห้อ (Brand)</label>
+                            <input type="text" id="brand">
+                        </div>
+                        <div class="form-group" data-show="claim ของ,ข้อมูลเครื่อง">
+                            <label class="input-label">รุ่น (Model)</label>
+                            <input type="text" id="model">
+                        </div>
+                        <div class="form-group" data-show="ข้อมูลเครื่อง">
+                            <label class="input-label">ความแรง</label>
+                            <input type="text" id="power">
+                        </div>
+
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">Motor (HP)</label>
+                            <input type="text" id="motorHP">
+                        </div>
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">Motor (KW)</label>
+                            <input type="text" id="motorKW">
+                        </div>
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">สภาพแวดล้อมในการใช้งาน</label>
+                            <input type="text" id="environment">
+                        </div>
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">สถานที่ติดตั้ง</label>
+                            <input type="text" id="location">
+                        </div>
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">รายละเอียดปัญหา / อาการเสีย</label>
+                            <textarea id="problemDetail" rows="3"></textarea>
+                        </div>
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">สถานะการรับประกัน</label>
+                            <select id="warrantyStatus">
+                                <option value="อยู่ในประกัน">อยู่ในประกัน</option>
+                                <option value="หมดประกัน">หมดประกัน</option>
+                                <option value="ไม่แน่ใจ">ไม่แน่ใจ</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" data-show="claim ของ,คืนของ,ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">รหัสสินค้า (ถ้ามี)</label>
+                            <input type="text" id="productId">
+                        </div>
+                        <div class="form-group" data-show="claim ของ,คืนของ,ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">รายการสินค้า (กรณีมีหลายรายการระบุให้ครบ)</label>
+                            <textarea id="productList" rows="3" placeholder="1. สินค้า A จำนวน...&#10;2. สินค้า B จำนวน..."></textarea>
+                        </div>
+                        <div class="form-group" data-show="claim ของ,คืนของ,ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">จำนวนรวม</label>
+                            <input type="number" id="qty">
+                        </div>
+                        <div class="form-group" data-show="claim ของ,คืนของ">
+                            <label class="input-label">เลขที่ใบกำกับภาษี / เลขที่เอกสารอ้างอิง</label>
+                            <input type="text" id="taxInvoice">
+                        </div>
+
+                        <div class="form-group" data-show="ยืมของ">
+                            <label class="input-label">ค่ามัดจำ (บาท)</label>
+                            <input type="number" id="deposit" placeholder="2000">
+                        </div>
+                        <div class="form-group" data-show="เช่าเครื่อง">
+                            <label class="input-label">เลขที่เอกสาร</label>
+                            <input type="text" id="documentNo">
+                        </div>
+                        <div class="form-group" data-show="เช่าเครื่อง">
+                            <label class="input-label">ค่าเช่าต่อรอบ (บาท)</label>
+                            <input type="number" id="rentalFee">
+                        </div>
+                        <div class="form-group" data-show="ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">วันที่ส่งของออก</label>
+                            <input type="date" id="sendDate">
+                        </div>
+                        <div class="form-group" data-show="ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">ส่งของไปโดย (บริษัทขนส่ง)</label>
+                            <input type="text" id="sendBy">
+                        </div>
+                        <div class="form-group" data-show="ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">เลขพัสดุ / Tracking</label>
+                            <input type="text" id="trackingNo">
+                        </div>
+                        <div class="form-group" data-show="ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">วันครบกำหนด</label>
+                            <input type="date" id="dueDate">
+                        </div>
+                        <div class="form-group" data-show="ยืมของ,เช่าเครื่อง">
+                            <label class="input-label">การตั้งเตือน</label>
+                            <select id="alert7Days"><option value="เปิด">เปิดแจ้งเตือน</option><option value="ปิด">ปิด</option></select>
+                        </div>
+
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">วันที่แพลนเข้างาน (Planned Date)</label>
+                            <input type="date" id="plannedDate">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">วันที่เข้าทำงานจริง (Actual Date)</label>
+                            <input type="date" id="actualDate">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">อายุสัญญา</label>
+                            <input type="text" id="contractAge">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">ประเภทงานหลัก</label>
+                            <select id="jobType"><option value="" disabled selected>Loading...</option></select>
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">รายละเอียดงานที่ทำ</label>
+                            <textarea id="workDetail" rows="3"></textarea>
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">ข้อมูลงานเพิ่มเติม (ถ้ามี)</label>
+                            <textarea id="extraInfo" rows="2"></textarea>
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">อะไหล่ที่เปลี่ยน</label>
+                            <input type="text" id="spareParts">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">จำนวน PM (ครั้ง)</label>
+                            <input type="number" id="pmCount">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">วันกำหนด PM รอบถัดไป</label>
+                            <input type="date" id="pmDueDate">
+                        </div>
+                        <div class="form-group" data-show="ลงงานช่าง">
+                            <label class="input-label">ช่างผู้ปฏิบัติงาน</label>
+                            <input type="text" id="technicianName">
+                        </div>
+
+                        <div class="form-group" data-show="ข้อมูลเครื่อง">
+                            <label class="input-label">อะไหล่ (Air Filter)</label>
+                            <input type="text" id="airFilter">
+                        </div>
+                        <div class="form-group" data-show="ข้อมูลเครื่อง">
+                            <label class="input-label">อะไหล่ (Oil Filter)</label>
+                            <input type="text" id="oilFilter">
+                        </div>
+                        <div class="form-group" data-show="ข้อมูลเครื่อง">
+                            <label class="input-label">อะไหล่ (Separator)</label>
+                            <input type="text" id="separator">
+                        </div>
+
+                        <div class="form-group" data-show="claim ของ">
+                            <label class="input-label">หมายเลข Claim (ถ้ามีแล้ว)</label>
+                            <input type="text" id="claimId">
+                        </div>
+                        <div class="form-group" data-show="คืนของ">
+                            <label class="input-label">เหตุผลที่ขอคืน</label>
+                            <textarea id="reason" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-group" data-show="claim ของ,คืนของ">
+                            <label class="input-label">แนบรูปถ่าย / ไฟล์อ้างอิง (สูงสุด 10 ไฟล์)</label>
+                            <input type="file" id="imageFiles" accept="image/*" multiple>
+                            <div class="preview-container" id="previewContainer"></div>
+                        </div>
+
+                        <div class="form-group" data-show="ลงงานช่าง,claim ของ,คืนของ,ยืมของ,เช่าเครื่อง,ข้อมูลเครื่อง">
+                            <label class="input-label">หมายเหตุเพิ่มเติม</label>
+                            <textarea id="note" rows="2"></textarea>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="btn btn-primary" style="margin-top:30px;">บันทึกข้อมูลเข้าระบบ</button>
+                    </div>
+                </form>
             </div>
 
-            <div class="divider"></div>
+            <div id="tabOrders" class="content-area hidden fade-in">
+                <h4 style="margin-top:0; color:var(--text-main); font-weight: 800; margin-bottom: 20px;">My Records</h4>
+                <div id="customerListContainer" style="text-align: center; color: var(--text-muted); font-size: 14px;"></div>
+            </div>
 
-            <div style="font-size: 13px; color: #FFF; font-weight: 600; margin-bottom: 10px;">SHIPPING ADDRESS (สำหรับจัดส่งพัสดุ)</div>
-            <label class="checkbox-container">
-                <input type="checkbox" id="cbShipSameAsProfile" onchange="autoFillShipping('profile')">
-                <div class="checkmark"></div>
-                <span style="font-size: 12px; color: #FFF;">ใช้ที่อยู่หลัก</span>
-            </label>
-            <label class="checkbox-container" style="margin-bottom: 15px;">
-                <input type="checkbox" id="cbShipSameAsBill" onchange="autoFillShipping('bill')">
-                <div class="checkmark"></div>
-                <span style="font-size: 12px; color: #FFF;">ใช้ที่อยู่ออกบิล</span>
-            </label>
+            <div id="tabOverview" class="content-area hidden fade-in">
+                <div class="stats-container">
+                    <div class="stat-box"><div class="stat-num" style="color:var(--accent-primary);" id="statPendingCount">0</div><div class="stat-label">Pending</div></div>
+                    <div class="stat-box"><div class="stat-num" style="color:var(--accent-green);" id="statDoneCount">0</div><div class="stat-label">Completed</div></div>
+                </div>
+                <div style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:20px; font-weight: 500;">Summary profile tracker overview active.</div>
+            </div>
 
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">RECIPIENT NAME</label><input type="text" id="epShipName" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">PHONE</label><input type="tel" id="epShipPhone" class="ep-input"></div>
+            <div id="tabProfile" class="content-area hidden fade-in">
+                <div class="order-card" style="text-align: center; padding: 30px 20px;">
+                    <i class="fas fa-user-cog fa-3x" style="color: var(--accent-primary); margin-bottom: 15px;"></i>
+                    <h4 style="margin: 0; font-size: 18px; font-weight: 700;" id="profNameDisplay">User Name</h4>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 13px;" id="profRoleDisplay">Role</p>
+                </div>
+                <button class="btn btn-outline" onclick="liff.logout(); location.reload();">Log Out</button>
             </div>
-            <label class="input-label">ADDRESS</label>
-            <input type="text" id="epShipAddress" class="ep-input">
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">CITY</label><input type="text" id="epShipCity" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">PROVINCE</label><input type="text" id="epShipProv" class="ep-input"></div>
+
+            <div id="tabStaffOrders" class="content-area hidden fade-in">
+                <div class="flex-row" style="margin-bottom: 15px;">
+                    <div class="search-bar">
+                        <input type="text" id="staffSearch" placeholder="Search ID, Name..." onkeyup="filterStaffList()">
+                        <i class="fas fa-search" style="color:var(--text-muted);"></i>
+                    </div>
+                </div>
+                <select id="staffTypeFilter" class="dark-input" style="margin-bottom: 20px; font-weight: 700; color: var(--accent-primary); border-color: var(--accent-primary);" onchange="fetchStaffData()">
+                    <option value="claim ของ">รายการ Claim ของ</option>
+                    <option value="คืนของ">รายการ คืนของ</option>
+                    <option value="ลงงานช่าง">รายการ ลงงานช่าง</option>
+                    <option value="ยืมของ">รายการ ยืมของ</option>
+                    <option value="เช่าเครื่อง">รายการ เช่าเครื่อง</option>
+                    <option value="ข้อมูลเครื่อง">รายการ ข้อมูลเครื่อง</option>
+                </select>
+                <div id="staffListContainer" style="text-align: center; color: var(--text-muted); font-size: 14px;"></div>
             </div>
-            <div class="flex-row">
-                <div style="flex:1;"><label class="input-label">ZIP</label><input type="text" id="epShipZip" class="ep-input"></div>
-                <div style="flex:1;"><label class="input-label">COUNTRY</label><input type="text" id="epShipCountry" value="Thailand" class="ep-input"></div>
-            </div>
-            <label class="input-label">LOCATION (ลิงก์ Google Maps / พิกัด)</label>
-            <input type="text" id="epLocation" class="ep-input">
-            
-            <div class="flex-row" style="margin-top:30px;">
-                <button class="btn" style="background:#111; border:1px solid #444; flex:1;" onclick="closeEditProfile()">Cancel</button>
-                <button class="btn btn-green" style="flex:2;" onclick="saveProfile()">Save Changes</button>
+
+            <div class="global-footer">
+                <img id="logoFooter" src="" alt="Logo">
+                <div>Powered by SSP Compressor Part</div>
             </div>
         </div>
     </div>
 
-    <div id="modalAboutUs" class="modal-overlay">
+    <div id="modalApproveClaim" class="modal-center">
         <div class="modal-box">
-            <div class="flex-between" style="margin-bottom: 15px;">
-                <h3 style="color:var(--accent-red); margin:0;">ABOUT US</h3>
-            </div>
-            <div class="modal-content-scroll">
-                <p style="font-size:13px; color:#DDD; line-height:1.6; text-indent: 20px; margin-top:0;">Welcome to AWESOME.SCREEN, our go-to destination for premium t-shirt screen printing services. As a fully serviced screen printing company, we take immense pride in offering top-quality custom designs exclusively on 100% cotton t-shirts.</p>
-            </div>
-            <button class="btn btn-pink" onclick="closeModal('modalAboutUs')">Close</button>
-        </div>
-    </div>
+            <h3 style="color:var(--text-main); margin-top:0; font-weight: 800; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <i class="fas fa-clipboard-check" style="color: var(--accent-primary);"></i> ตรวจสอบรายการ
+            </h3>
+            <input type="hidden" id="approveOrderNo">
+            <input type="hidden" id="approveOrderType">
 
-    <div id="modalTerms" class="modal-overlay">
-        <div class="modal-box">
-            <div class="flex-between" style="margin-bottom: 15px;">
-                <h3 style="color:var(--accent-red); margin:0;">Terms & Conditions</h3>
-            </div>
-            <div class="modal-content-scroll" style="font-size:12px; color:#DDD; line-height:1.6;">
-                <strong>1. การยอมรับเงื่อนไข</strong><br>การที่คุณเข้าใช้งานผ่านระบบนี้ ถือว่าคุณตกลงตามเงื่อนไข<br><br>
-                <strong>2. ขอบเขตการให้บริการ</strong><br>เราพยายามอย่างเต็มที่เพื่อให้ระบบเสถียร แต่ไม่รับรองว่าบริการจะไม่มีการขัดข้อง<br><br>
-                <strong>3. ทรัพย์สินทางปัญญา</strong><br>เนื้อหาและซอฟต์แวร์ที่ปรากฏ เป็นลิขสิทธิ์ของบริษัท ห้ามนำไปใช้โดยไม่ได้รับอนุญาต
-            </div>
-            <button class="btn btn-pink" onclick="closeModal('modalTerms')">Close</button>
-        </div>
-    </div>
+            <label class="input-label" style="color: var(--accent-primary);">บริษัทประกัน</label>
+            <select id="approveInsurance" class="dark-input" style="border-color: var(--accent-primary);"></select>
 
-    <div id="modalAllJobs" class="modal-overlay">
-        <div class="modal-box" style="padding: 15px;">
-            <div class="flex-between" style="margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom:10px;">
-                <h3 style="color:var(--accent-cyan); margin:0; font-size: 16px;">งานที่ผูกแล้วทั้งหมด</h3>
-                <button style="background:none; border:none; color:#FFF; font-size:18px; cursor:pointer;" onclick="closeModal('modalAllJobs')"><i class="fas fa-times"></i></button>
+            <label class="input-label">ผลการตรวจสอบ (จัดซื้อ/แอดมิน)</label>
+            <select id="approveResult" class="dark-input">
+                <option value="Approved">อนุมัติ (Approved)</option>
+                <option value="Rejected">ไม่อนุมัติ (Rejected)</option>
+            </select>
+
+            <label class="input-label">ความคิดเห็นเพิ่มเติม</label>
+            <textarea id="approveComment" rows="3" class="dark-input" placeholder="ระบุสาเหตุหรือหมายเหตุการตรวจสอบ..."></textarea>
+
+            <label class="input-label">ลิงก์เอกสารอ้างอิง (PDF/Drive)</label>
+            <input type="url" id="approveDocLink" class="dark-input" placeholder="https://drive.google.com/...">
+
+            <div class="flex-row" style="margin-top:25px;">
+                <button class="btn btn-outline" style="flex: 1;" onclick="closeModal('modalApproveClaim')">ยกเลิก</button>
+                <button class="btn btn-primary" style="flex: 1.5;" onclick="submitApproval()">บันทึกข้อมูล</button>
             </div>
-            <div class="modal-content-scroll" id="modalAllJobsList" style="max-height: 50vh;"></div>
         </div>
     </div>
 
     <script>
-        // ================= CONFIGURATION =================
-        const GAS_API = 'https://script.google.com/macros/s/AKfycbzRyK81vC00Llwox1ma_inWoUjwPVMwjZ8c4wyN3rh4rbyndTuclUVdUSx-DYhOLaLM/exec'; 
-        const LIFF_ID = '2010137466-HmdOphdP';
-        // =================================================
-
+        const GAS_API = 'https://script.google.com/macros/s/AKfycbwhDiODSQuAye1wtDA0ExUFmsk29gEwZCxI03cXJ9djDMVN8AQcy2wn40gK75DfNNXU/exec'; 
+        const LIFF_ID = '2010232097-fGwnnXbL';
+        // แปลงลิงก์ Drive ของผู้ใช้เป็น direct thumbnail สำหรับการแสดงผลเว็บบนเบราว์เซอร์
+        const BRAND_LOGO = 'https://drive.google.com/thumbnail?id=13sLtGeUZbR5fDNgUPqHvZCIlF1ncwZER&sz=w500'; 
+        
         let userProfile = {};
         let dbUserData = {};
-        let allCustomers = [];
-        
-        let selectedChips = []; 
-        let viewMode = 'all'; 
+        let isStaff = false;
+        let uploadedImages = [];
+        let configData = { insurance: [], departments: [], workTypes: [] };
 
-        async function main() {
+        const ROLE_ACCESS = {
+            'Customer': ['claim ของ', 'คืนของ'],
+            'Admin': ['ลงงานช่าง', 'claim ของ', 'คืนของ', 'ยืมของ', 'เช่าเครื่อง', 'ข้อมูลเครื่อง'],
+            'Sales': ['ยืมของ', 'เช่าเครื่อง', 'claim ของ', 'คืนของ'],
+            'Tech': ['ลงงานช่าง'],
+            'Manager': ['ข้อมูลเครื่อง', 'เช่าเครื่อง'],
+            'Procurement': ['claim ของ', 'คืนของ']
+        };
+
+        const FORM_OPTIONS = [
+            { value: 'claim ของ', text: 'แจ้งเคลมสินค้า (Claim)' },
+            { value: 'คืนของ', text: 'แจ้งคืนของ (Return)' },
+            { value: 'ลงงานช่าง', text: 'ลงงานช่าง (Service)' },
+            { value: 'ยืมของ', text: 'แจ้งยืมของ (Borrow)' },
+            { value: 'เช่าเครื่อง', text: 'แจ้งเช่าเครื่อง (Rent)' },
+            { value: 'ข้อมูลเครื่อง', text: 'ลงข้อมูลเครื่องจักร (Machine Info)' }
+        ];
+
+        window.onload = async () => {
+            if(document.getElementById('logoWelcome')) document.getElementById('logoWelcome').src = BRAND_LOGO;
+            if(document.getElementById('logoLogin')) document.getElementById('logoLogin').src = BRAND_LOGO;
+            if(document.getElementById('logoRegister')) document.getElementById('logoRegister').src = BRAND_LOGO;
+            if(document.getElementById('logoFooter')) document.getElementById('logoFooter').src = BRAND_LOGO;
+            
+            await initLIFF(); 
+            await fetchConfigs();
+            checkUser();
+        };
+
+        async function initLIFF() {
             try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-                userProfile = await liff.getProfile();
-                initApp(userProfile.userId);
-            } catch(e) { console.error(e); }
+                await liff.init({ liffId: LIFF_ID }); 
+                if (liff.isLoggedIn()) {
+                    userProfile = await liff.getProfile(); 
+                }
+            } catch(e) { console.error("LIFF Init Error", e); }
         }
-        main();
 
         function callBackend(action, data, callback) {
-            fetch(GAS_API, { method: 'POST', body: JSON.stringify({ action: action, data: data }) })
+            if(action !== 'submitData') document.getElementById('loader').classList.remove('hidden');
+            fetch(GAS_API, { method: 'POST', body: JSON.stringify({ action: action, data: data, sheetName: data.sheetName || '', orderNo: data.orderNo || '' }) })
             .then(r => r.json())
-            .then(res => { if(callback) callback(res); })
-            .catch(e => { 
-                console.error(e);
+            .then(res => { 
                 document.getElementById('loader').classList.add('hidden'); 
-                alert("Error: " + e.message); 
+                if(callback) callback(res); 
+            })
+            .catch(e => { 
+                document.getElementById('loader').classList.add('hidden'); 
+                Swal.fire('Error', 'Connection failed.', 'error');
             });
         }
 
-        function showAuthView(viewId) {
-            document.getElementById('viewWelcome').classList.add('hidden');
-            document.getElementById('viewRegister').classList.add('hidden');
-            document.getElementById(viewId).classList.remove('hidden');
+        function fetchConfigs() {
+            return fetch(GAS_API + '?action=getConfigs')
+            .then(r => r.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    configData = res.data;
+                    const deptSelect = document.getElementById('regDepartment');
+                    deptSelect.innerHTML = '<option value="" disabled selected>Select Department</option><option value="Customer">ลูกค้า / บุคคลภายนอก</option>';
+                    configData.departments.forEach(d => deptSelect.innerHTML += `<option value="${d}">${d}</option>`);
+
+                    const jtSelect = document.getElementById('jobType');
+                    jtSelect.innerHTML = '<option value="" disabled selected>เลือกประเภทงาน</option>';
+                    configData.workTypes.forEach(w => jtSelect.innerHTML += `<option value="${w}">${w}</option>`);
+
+                    const insSelect = document.getElementById('approveInsurance');
+                    insSelect.innerHTML = '<option value="-">ไม่มี / ไม่ระบุ</option>';
+                    configData.insurance.forEach(i => insSelect.innerHTML += `<option value="${i}">${i}</option>`);
+                }
+            });
         }
 
-        function initApp(userId) {
-            callBackend('init_app', { userId: userId }, (res) => {
+        function checkUser() {
+            if(!userProfile.userId) { showAuthView('viewWelcome'); document.getElementById('loader').classList.add('hidden'); return; }
+            
+            fetch(GAS_API + '?action=checkUser&uid=' + userProfile.userId)
+            .then(r => r.json())
+            .then(res => {
                 document.getElementById('loader').classList.add('hidden');
-                if (res.found) {
-                    dbUserData = res.user;
-                    renderApp(res);
-                } else {
+                if (res.isRegistered) {
+                    dbUserData = { RealName: res.name, Role: res.role };
+                    setupAppEnvironment();
+                } else { 
                     showAuthView('viewWelcome');
                 }
             });
         }
 
-        function renderApp(res) {
-            document.getElementById('viewWelcome').classList.add('hidden');
-            document.getElementById('viewRegister').classList.add('hidden');
+        function setupAppEnvironment() {
+            document.querySelectorAll('.content-area').forEach(e => e.classList.add('hidden'));
             document.getElementById('viewApp').classList.remove('hidden');
             
-            document.getElementById('headerName').innerText = dbUserData.realName;
-            document.getElementById('headerBrand').innerText = dbUserData.companyName || 'No Brand';
+            document.getElementById('headerName').innerText = dbUserData.RealName;
+            document.getElementById('headerRoleDisplay').innerText = "Role: " + dbUserData.Role;
             document.getElementById('headerPic').src = userProfile.pictureUrl || 'https://via.placeholder.com/100';
+            document.getElementById('sidebarPic').src = userProfile.pictureUrl || 'https://via.placeholder.com/100';
+            document.getElementById('sidebarName').innerText = dbUserData.RealName;
+            document.getElementById('sidebarRole').innerText = dbUserData.Role;
             
-            if (res.isStaff) {
-                document.getElementById('headerRoleBadge').innerHTML = '<i class="fas fa-user-shield"></i> ' + dbUserData.role;
-                document.getElementById('headerRoleBadge').className = 'tier-badge';
-                
+            document.getElementById('profNameDisplay').innerText = dbUserData.RealName;
+            document.getElementById('profRoleDisplay').innerText = "Role: " + dbUserData.Role;
+
+            const staffRoles = ['Admin', 'Sales', 'Tech', 'Manager', 'Procurement'];
+            isStaff = staffRoles.includes(dbUserData.Role);
+
+            const selector = document.getElementById('sheetSelector');
+            selector.innerHTML = '<option value="" disabled selected>-- กรุณาเลือก --</option>';
+            const allowed = ROLE_ACCESS[dbUserData.Role] || ROLE_ACCESS['Customer'];
+            FORM_OPTIONS.forEach(opt => {
+                if (allowed.includes(opt.value)) selector.innerHTML += `<option value="${opt.value}">${opt.text}</option> `;
+            });
+
+            if (isStaff) {
                 document.getElementById('sidebarMenuStaff').classList.remove('hidden');
-                document.getElementById('sidebarMenuCustomer').classList.add('hidden');
-                switchTab('Staff');
-                fetchSAData();
+                document.getElementById('staffElements').classList.remove('hidden');
+                switchTab('StaffOrders');
             } else {
-                let tier = dbUserData.tier || 'REGULAR';
-                let tierClass = 'tier-' + tier.toLowerCase();
-                document.getElementById('headerRoleBadge').innerHTML = tier;
-                document.getElementById('headerRoleBadge').className = `badge-tier ${tierClass}`;
-                
                 document.getElementById('sidebarMenuCustomer').classList.remove('hidden');
-                
-                // 📌 ซ่อนแท็บ Orders เด็ดขาด ถ้ายังเป็นแค่ลูกค้ารอจับคู่ (ให้เห็นแค่ป้ายเหลือง)
-                if (dbUserData.status === 'pending_match') {
-                    document.getElementById('bannerPending').style.display = 'block';
-                    document.getElementById('tabOrders').style.display = 'none'; 
-                } else {
-                    document.getElementById('bannerPending').style.display = 'none';
-                    switchTab('Orders');
-                    renderOrders(res.jobs);
-                }
+                document.getElementById('customerElements').classList.remove('hidden');
+                switchTab('Orders');
             }
         }
 
-        // ================= CUSTOMER VIEW =================
-        function getStageIndex(stage) {
-            const map = {'Order Received': 1, 'Preparation': 2, 'In Production': 3, 'Quality Check': 4, 'Delivered': 5};
-            return map[stage] || 0;
+        function showAuthView(id) {
+            document.querySelectorAll('.content-area').forEach(e => e.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('fade-in');
         }
 
-        function getStageColor(stage) {
-            const map = {'Order Received':'#AEEA00', 'Preparation':'#FFCA28', 'In Production':'#B388FF', 'Quality Check':'#4FC3F7', 'Delivered':'#00E676'};
-            return map[stage] || '#888888';
-        }
-
-        function getBannerGradient(stage) {
-            const map = {
-                'Order Received': 'linear-gradient(135deg, #AEEA00, #689F38)', 
-                'Preparation': 'linear-gradient(135deg, #FFCA28, #F57C00)',   
-                'In Production': 'linear-gradient(135deg, #B388FF, #7E57C2)',  
-                'Quality Check': 'linear-gradient(135deg, #4FC3F7, #0277BD)',  
-                'Delivered': 'linear-gradient(135deg, #00E676, #00C853)'
+        function register() {
+            const payload = { 
+                userId: userProfile.userId, 
+                empId: document.getElementById('regEmpId').value || "-",
+                name: document.getElementById('regName').value, 
+                phone: document.getElementById('regPhone').value
             };
-            return map[stage] || '#333';
-        }
-
-        function renderOrders(jobs) {
-            const container = document.getElementById('orderListContainer');
-            const banner = document.getElementById('latestOrderBanner');
-            document.getElementById('orderCount').innerText = `(${jobs.length})`;
-
-            if (!jobs || jobs.length === 0) {
-                container.innerHTML = '<div class="order-card text-center" style="color:#aaa; text-align:center;">ไม่มีรายการสั่งผลิต</div>';
-                banner.style.display = 'none';
-                return;
-            }
-
-            let sortedJobs = [...jobs].reverse(); 
-            let latest = sortedJobs[0];
-            banner.style.display = 'block';
-            banner.style.background = getBannerGradient(latest.customerStage);
-            document.getElementById('latestStage').innerText = latest.customerStage;
-            document.getElementById('latestJobNo').innerText = latest.jobNo;
-            document.getElementById('latestDelivery').innerText = latest.delivery || '-';
-
-            let html = '';
-            sortedJobs.forEach(job => {
-                const stageNum = getStageIndex(job.customerStage);
-                const sColor = getStageColor(job.customerStage);
-                let stepBars = ''; let stepLabels = '';
-                const stages = ['Order', 'Prep', 'Prod', 'QC', 'Ship'];
-                
-                for(let i=1; i<=5; i++) {
-                    let isActive = i <= stageNum;
-                    stepBars += `<div class="step-bar" style="background: ${isActive ? sColor : '#444'};"></div>`;
-                    stepLabels += `<div class="step-label" style="color: ${isActive ? sColor : '#666'};">${stages[i-1]}</div>`;
-                }
-
-                html += `
-                <div class="order-card" style="border: 1px solid ${sColor}40;">
-                    <div class="flex-between">
-                        <div><i class="fas fa-tshirt" style="color:${sColor}; margin-right:5px; font-size:16px;"></i><span style="color:#FFF; font-size:16px; font-weight:700;">${job.jobNo}</span></div>
-                        <div style="color:${sColor}; font-weight:700; font-size:12px;">${job.customerStage}</div>
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <span style="color:${sColor}; font-weight:700; font-size:14px;">${job.style || '-'}</span>
-                        <span style="color:#888; font-size:12px;"> (${job.qty || '-'} pcs)</span>
-                    </div>
-                    <div style="color:#888; font-size:11px; margin-top:2px;">Delivery: <span style="color:#FFF; font-weight:600;">${job.delivery || '-'}</span></div>
-                    <div style="margin-top:8px; font-size:11px; color:#aaa;">สถานะปัจจุบัน: <span style="color:${sColor};">${job.internalStatus}</span></div>
-                    <div class="step-bar-container">${stepBars}</div>
-                    <div class="step-label-container">${stepLabels}</div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        // ================= STAFF VIEW =================
-        function fetchSAData() {
-            callBackend('get_sa_data', {}, (res) => {
-                if(res.status === 'success') {
-                    allCustomers = res.customers;
-                    document.getElementById('saStatPending').innerText = res.stats.pendingCust;
-                    document.getElementById('saStatActive').innerText = res.stats.activeCust;
-                    document.getElementById('saStatJobs').innerText = res.stats.totalJobs;
-                    
-                    if (dbUserData.role === 'Sales Coordinators' || dbUserData.role === 'Sales Manager' || dbUserData.role === 'Admin') {
-                        let uniqueSAs = new Set();
-                        allCustomers.forEach(c => c.jobs.forEach(j => { if(j.salesRep && j.salesRep !== '-') uniqueSAs.add(j.salesRep); }));
-                        let chipHTML = Array.from(uniqueSAs).map(sa => `<div class="chip" id="chip-${sa}" onclick="toggleChip('${sa}')">${sa}</div>`).join('');
-                        if (chipHTML) {
-                            document.getElementById('saChipsContainer').innerHTML = chipHTML;
-                            document.getElementById('saChipsContainer').classList.remove('hidden');
-                        }
-                    }
-                    applyFilters();
-                }
-            });
-        }
-
-        function toggleChip(saName) {
-            const idx = selectedChips.indexOf(saName);
-            if (idx > -1) { selectedChips.splice(idx, 1); document.getElementById(`chip-${saName}`).classList.remove('active'); }
-            else { selectedChips.push(saName); document.getElementById(`chip-${saName}`).classList.add('active'); }
-            applyFilters();
-        }
-
-        function filterSADashboard(mode) {
-            viewMode = (viewMode === mode) ? 'all' : mode; 
-            document.getElementById('boxStatPending').classList.remove('active');
-            document.getElementById('boxStatActive').classList.remove('active');
-            if(viewMode === 'pending') document.getElementById('boxStatPending').classList.add('active');
-            if(viewMode === 'active') document.getElementById('boxStatActive').classList.add('active');
-            applyFilters();
-        }
-
-        // 📌 ฟังก์ชันกรองข้อมูลแบบใหม่ ที่ค้นหาจากชื่อลูกค้า และค้นหาชื่อ SA (ชื่อเล่น)
-        function applyFilters() {
-            const query = document.getElementById('saSearchInput').value.toLowerCase().trim();
-            const validData = allCustomers.filter(c => c.lineUserId);
+            if(!payload.name || !payload.phone) return Swal.fire('Warning','กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน','warning');
             
-            let filteredData = validData.map(cust => {
-                let nameMatch = (cust.realName || '').toLowerCase().includes(query) || (cust.phone || '').includes(query);
-                
-                if (query !== '' && !nameMatch) return null;
-
-                if (viewMode === 'pending' && cust.status !== 'pending_match') return null;
-                if (viewMode === 'active' && cust.status === 'pending_match') return null;
-
-                if (cust.status === 'active') {
-                    let allowedJobs = [];
-                    if (dbUserData.role === 'Sales Admin') {
-                        // 📌 ใช้ตัวแปร saName (หรือ realName ถ้ายิงไม่ได้กรอก) ในการหา
-                        let saKey = (dbUserData.saName || dbUserData.realName).toLowerCase().trim();
-                        allowedJobs = cust.jobs.filter(j => j.salesRep.toLowerCase().includes(saKey) || saKey.includes(j.salesRep.toLowerCase()));
-                    } else if (selectedChips.length > 0) {
-                        allowedJobs = cust.jobs.filter(j => selectedChips.includes(j.salesRep));
-                    } else {
-                        allowedJobs = cust.jobs; 
-                    }
-                    
-                    if (allowedJobs.length === 0 && query === '') return null; 
-                    
-                    return { ...cust, jobs: allowedJobs };
-                }
-                return cust;
-            }).filter(c => c !== null);
-
-            renderSAMatchList(filteredData);
-        }
-
-        function renderSAMatchList(data) {
-            const pendingList = document.getElementById('saPendingList');
-            const activeList = document.getElementById('saActiveList');
-            
-            if(data.length === 0) {
-                document.getElementById('saEmptyState').style.display = 'block';
-                document.getElementById('saPendingSection').style.display = 'none';
-                document.getElementById('saActiveSection').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('saEmptyState').style.display = 'none';
-            let pHTML = ''; let aHTML = '';
-            let hasP = false; let hasA = false;
-
-            data.forEach(cust => {
-                let tierClass = 'tier-' + (cust.tier || 'regular').toLowerCase();
-                let tierBadge = `<span class="badge-tier-small ${tierClass}">${cust.tier}</span>`;
-
-                if (cust.status === 'pending_match') {
-                    hasP = true;
-                    pHTML += `
-                    <div class="sa-card pending">
-                        <div class="flex-between">
-                            <h4 style="margin:0; font-size:16px; color:#FFF;">${cust.realName} ${tierBadge}</h4>
-                            <div class="badge-yellow">รอจับคู่</div>
-                        </div>
-                        <div style="font-size:11px; color:#888; margin-top:4px;">${cust.companyName || '-'} • ${cust.phone}<br>ลงทะเบียน ${cust.registeredAt || '-'}</div>
-                        <div id="box-${cust.lineUserId}" style="display:none;"><input type="text" id="match-jobs-${cust.lineUserId}" class="match-input" placeholder="ใส่เลขจ๊อบ (เช่น FAS01, TSH02)"><button class="btn-cyan" onclick="confirmMatch('${cust.lineUserId}')">ยืนยันจับคู่</button></div>
-                        <button class="btn-cyan" id="btn-${cust.lineUserId}" onclick="showSAInput('${cust.lineUserId}')">+ จับคู่กับเลขจ๊อบ</button>
-                    </div>`;
-                } else {
-                    hasA = true;
-                    let jH = cust.jobs.length > 0 ? cust.jobs.map(j => `
-                        <div class="sa-job-item">
-                            <div><div class="sa-job-no">${j.jobNo}</div><div style="font-size:10px; font-weight:bold; color:#CCC;">SA: ${j.salesRep}</div></div>
-                            <div style="font-size:11px; font-weight:bold; color:${getStageColor(j.stage)}">${j.stage}</div>
-                        </div>`).join('') : '<div style="color:#666; font-size:11px; padding:10px 0;">ไม่มีงานที่คุณดูแลอยู่</div>';
-                    
-                    aHTML += `
-                    <div class="sa-card active">
-                        <div class="flex-between">
-                            <h4 style="margin:0; font-size:16px; color:#FFF;">${cust.realName} ${tierBadge}</h4>
-                            <div class="badge-green">Active</div>
-                        </div>
-                        <div style="font-size:11px; color:#888; margin-top:4px; margin-bottom:10px;">${cust.companyName || '-'} • ${cust.phone}</div>
-                        <div style="background:#1A1A1A; border-radius:8px; padding:0 12px;">${jH}</div>
-                        <div id="box-${cust.lineUserId}" style="display:none;"><input type="text" id="match-jobs-${cust.lineUserId}" class="match-input" placeholder="ใส่เลขจ๊อบใหม่"><button class="btn-cyan" onclick="confirmMatch('${cust.lineUserId}')">ยืนยันเพิ่มงาน</button></div>
-                        <button class="btn-outline-cyan" id="btn-${cust.lineUserId}" onclick="showSAInput('${cust.lineUserId}')">+ เพิ่มงานให้ลูกค้านี้</button>
-                    </div>`;
-                }
-            });
-
-            pendingList.innerHTML = pHTML; activeList.innerHTML = aHTML;
-            document.getElementById('saPendingSection').style.display = hasP ? 'block' : 'none';
-            document.getElementById('saActiveSection').style.display = hasA ? 'block' : 'none';
-        }
-
-        function showSAInput(uid) { document.getElementById(`box-${uid}`).style.display = 'block'; document.getElementById(`btn-${uid}`).style.display = 'none'; }
-        
-        function confirmMatch(uid) {
-            const val = document.getElementById(`match-jobs-${uid}`).value;
-            if(!val) return alert("กรุณาระบุเลขจ๊อบ");
-            const jobs = val.split(',').map(j => j.trim()).filter(j => j);
             document.getElementById('loader').classList.remove('hidden');
-            callBackend('match_jobs', { lineUserId: uid, jobNos: jobs, staffName: dbUserData.realName }, (res) => {
+            fetch(GAS_API, { method: 'POST', body: JSON.stringify({ action: 'register', data: payload }) })
+            .then(r => r.json())
+            .then(res => {
                 document.getElementById('loader').classList.add('hidden');
-                if(res.status === 'success') { alert("ดำเนินการสำเร็จ!"); fetchSAData(); }
-            });
-        }
-
-        function showAllMappedJobsModal() {
-            let html = '';
-            let totalJobs = 0;
-            allCustomers.forEach(c => {
-                if(c.jobs && c.jobs.length > 0) {
-                    let allowedJobs = c.jobs;
-                    if (dbUserData.role === 'Sales Admin') {
-                        let saKey = (dbUserData.saName || dbUserData.realName).toLowerCase().trim();
-                        allowedJobs = c.jobs.filter(j => j.salesRep.toLowerCase().includes(saKey) || saKey.includes(j.salesRep.toLowerCase()));
-                    } else if (selectedChips.length > 0) {
-                        allowedJobs = c.jobs.filter(j => selectedChips.includes(j.salesRep));
-                    }
-
-                    if(allowedJobs.length > 0) {
-                        totalJobs += allowedJobs.length;
-                        html += `<div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:10px;">
-                            <div style="font-size:12px; font-weight:bold; color:#FFF; margin-bottom:5px;">👤 ${c.realName}</div>`;
-                        allowedJobs.forEach(j => {
-                            html += `<div class="flex-between" style="font-size:11px; padding: 2px 0;">
-                                <span style="color:#888;">${j.jobNo}</span>
-                                <span style="color:${getStageColor(j.stage)}">${j.stage}</span>
-                            </div>`;
-                        });
-                        html += `</div>`;
-                    }
+                if(res.status === 'success') {
+                    Swal.fire('Success', 'ลงทะเบียนสำเร็จ!', 'success').then(() => location.reload());
                 }
             });
-            if(html === '') html = '<div style="text-align:center; color:#666; font-size:12px;">ไม่มีรายการงาน</div>';
-            document.getElementById('modalAllJobsList').innerHTML = html;
-            openModal('modalAllJobs');
         }
 
-        // ================= PROFILE & UTILS =================
-        function register() { 
-            const data = { userId: userProfile.userId, realName: document.getElementById('regName').value, brandName: document.getElementById('regBrand').value, phone: document.getElementById('regPhone').value, email: document.getElementById('regEmail').value };
-            if(!data.realName || !data.phone || !data.email) return alert("กรุณากรอกข้อมูลให้ครบถ้วน"); 
+        function processLogin() {
+            const name = document.getElementById('loginName').value;
+            const email = document.getElementById('loginEmail').value;
+            if(!name || !email) return Swal.fire('Warning','กรุณากรอกข้อมูลให้ครบถ้วน','warning');
+            
             document.getElementById('loader').classList.remove('hidden');
-            callBackend('register', data, (res) => { if(res.status === 'success') location.reload(); }); 
-        }
-
-        function openEditProfile() {
-            document.getElementById('epName').value = dbUserData.realName || '';
-            document.getElementById('epBrand').value = dbUserData.companyName || '';
-            document.getElementById('epPhone').value = dbUserData.phone || '';
-            document.getElementById('epEmail').value = dbUserData.email || '';
-            document.getElementById('epAddress').value = dbUserData.profileAddress || '';
-            document.getElementById('epCity').value = dbUserData.profileCity || '';
-            document.getElementById('epProv').value = dbUserData.profileProvince || '';
-            document.getElementById('epZip').value = dbUserData.profileZip || '';
-            document.getElementById('epCountry').value = dbUserData.profileCountry || 'Thailand';
-            document.getElementById('epBillCompany').value = dbUserData.billCompany || '';
-            document.getElementById('epBillPhone').value = dbUserData.billPhone || '';
-            document.getElementById('epBillTax').value = dbUserData.billTaxId || '';
-            document.getElementById('epBillAddress').value = dbUserData.billAddress || '';
-            document.getElementById('epBillCity').value = dbUserData.billCity || '';
-            document.getElementById('epBillProv').value = dbUserData.billProvince || '';
-            document.getElementById('epBillZip').value = dbUserData.billZip || '';
-            document.getElementById('epBillCountry').value = dbUserData.billCountry || 'Thailand';
-            document.getElementById('epShipName').value = dbUserData.shipName || '';
-            document.getElementById('epShipPhone').value = dbUserData.shipPhone || '';
-            document.getElementById('epShipAddress').value = dbUserData.shipAddress || '';
-            document.getElementById('epShipCity').value = dbUserData.shipCity || '';
-            document.getElementById('epShipProv').value = dbUserData.shipProvince || '';
-            document.getElementById('epShipZip').value = dbUserData.shipZip || '';
-            document.getElementById('epShipCountry').value = dbUserData.shipCountry || 'Thailand';
-            document.getElementById('epLocation').value = dbUserData.shipLocation || '';
-
-            document.getElementById('viewApp').classList.add('hidden');
-            document.getElementById('viewEditProfile').classList.add('show');
-            window.scrollTo(0,0);
-        }
-
-        function closeEditProfile() { document.getElementById('viewEditProfile').classList.remove('show'); document.getElementById('viewApp').classList.remove('hidden'); }
-
-        function saveProfile() {
-            const payload = {
-                userId: userProfile.userId,
-                realName: document.getElementById('epName').value,
-                brandName: document.getElementById('epBrand').value,
-                phone: document.getElementById('epPhone').value,
-                email: document.getElementById('epEmail').value,
-                address: document.getElementById('epAddress').value,
-                city: document.getElementById('epCity').value,
-                prov: document.getElementById('epProv').value,
-                zip: document.getElementById('epZip').value,
-                country: document.getElementById('epCountry').value,
-                billCompany: document.getElementById('epBillCompany').value,
-                billPhone: document.getElementById('epBillPhone').value,
-                billTaxId: document.getElementById('epBillTax').value,
-                billAddress: document.getElementById('epBillAddress').value,
-                billCity: document.getElementById('epBillCity').value,
-                billProvince: document.getElementById('epBillProv').value,
-                billZip: document.getElementById('epBillZip').value,
-                billCountry: document.getElementById('epBillCountry').value,
-                shipName: document.getElementById('epShipName').value,
-                shipPhone: document.getElementById('epShipPhone').value,
-                shipAddress: document.getElementById('epShipAddress').value,
-                shipCity: document.getElementById('epShipCity').value,
-                shipProvince: document.getElementById('epShipProv').value,
-                shipZip: document.getElementById('epShipZip').value,
-                shipCountry: document.getElementById('epShipCountry').value,
-                shipLocation: document.getElementById('epLocation').value
-            };
-            if(!payload.realName || !payload.phone || !payload.email) return alert("กรุณากรอกข้อมูลส่วนตัว (Name, Phone, Email) ให้ครบถ้วน");
-
-            document.getElementById('loader').classList.remove('hidden');
-            callBackend('update_profile', payload, (res) => {
-                if(res.status === 'success') { alert("บันทึกข้อมูลเรียบร้อยแล้ว!"); location.reload(); }
-                else { document.getElementById('loader').classList.add('hidden'); alert("Error: " + res.message); }
+            fetch(GAS_API + '?action=checkUser&uid=' + userProfile.userId)
+            .then(r => r.json())
+            .then(res => {
+                document.getElementById('loader').classList.add('hidden');
+                if(res.isRegistered && res.name === name) {
+                    Swal.fire('Success', 'เข้าสู่ระบบสำเร็จ', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', 'ไม่พบข้อมูลผู้ใช้หรือชื่อไม่ตรงกับในระบบ', 'error');
+                }
             });
         }
 
-        function autoFillBilling() {
-            if (document.getElementById('cbBillSameAsProfile').checked) {
-                document.getElementById('epBillCompany').value = document.getElementById('epName').value;
-                document.getElementById('epBillPhone').value = document.getElementById('epPhone').value;
-                document.getElementById('epBillAddress').value = document.getElementById('epAddress').value;
-                document.getElementById('epBillCity').value = document.getElementById('epCity').value;
-                document.getElementById('epBillProv').value = document.getElementById('epProv').value;
-                document.getElementById('epBillZip').value = document.getElementById('epZip').value;
-                document.getElementById('epBillCountry').value = document.getElementById('epCountry').value;
-            }
+        function toggleSidebar() { 
+            document.getElementById('sidebarMenu').classList.toggle('open'); 
+            document.getElementById('sidebarOverlay').classList.toggle('show'); 
         }
 
-        function autoFillShipping(source) {
-            if (source === 'profile' && document.getElementById('cbShipSameAsProfile').checked) {
-                document.getElementById('cbShipSameAsBill').checked = false;
-                document.getElementById('epShipName').value = document.getElementById('epName').value;
-                document.getElementById('epShipPhone').value = document.getElementById('epPhone').value;
-                document.getElementById('epShipAddress').value = document.getElementById('epAddress').value;
-                document.getElementById('epShipCity').value = document.getElementById('epCity').value;
-                document.getElementById('epShipProv').value = document.getElementById('epProv').value;
-                document.getElementById('epShipZip').value = document.getElementById('epZip').value;
-                document.getElementById('epShipCountry').value = document.getElementById('epCountry').value;
-            } else if (source === 'bill' && document.getElementById('cbShipSameAsBill').checked) {
-                document.getElementById('cbShipSameAsProfile').checked = false;
-                document.getElementById('epShipName').value = document.getElementById('epBillCompany').value || document.getElementById('epName').value;
-                document.getElementById('epShipPhone').value = document.getElementById('epBillPhone').value;
-                document.getElementById('epShipAddress').value = document.getElementById('epBillAddress').value;
-                document.getElementById('epShipCity').value = document.getElementById('epBillCity').value;
-                document.getElementById('epShipProv').value = document.getElementById('epBillProv').value;
-                document.getElementById('epShipZip').value = document.getElementById('epBillZip').value;
-                document.getElementById('epShipCountry').value = document.getElementById('epBillCountry').value;
-            }
-        }
-
-        function toggleSidebar() { document.getElementById('sidebarMenu').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
-        
         function switchTab(tabId) {
-            ['Orders', 'Staff', 'Profile'].forEach(id => { 
-                let el = document.getElementById('tab' + id); if (el) el.style.display = 'none';
-            });
-            let tEl = document.getElementById('tab' + tabId); if (tEl) tEl.style.display = 'block';
-            document.getElementById('sidebarMenu').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show');
+            document.querySelectorAll('#viewApp .content-area').forEach(el => el.classList.add('hidden'));
+            if(!isStaff) {
+                document.querySelectorAll('.nav-sq').forEach(el => el.classList.remove('active'));
+                if(document.getElementById('navSq' + tabId)) document.getElementById('navSq' + tabId).classList.add('active');
+            } else {
+                document.querySelectorAll('.s-btn').forEach(el => { el.classList.remove('s-btn-create','s-btn-all'); el.classList.add('s-btn-inactive'); });
+                if(tabId === 'CreateOrder') { document.getElementById('navBtnCreate').classList.remove('s-btn-inactive'); document.getElementById('navBtnCreate').classList.add('s-btn-create'); }
+                if(tabId === 'StaffOrders') { document.getElementById('navBtnAll').classList.remove('s-btn-inactive'); document.getElementById('navBtnAll').classList.add('s-btn-all'); }
+            }
+            document.getElementById('sidebarMenu').classList.remove('open'); 
+            document.getElementById('sidebarOverlay').classList.remove('show');
+            
+            const targetTab = document.getElementById('tab' + tabId);
+            if(targetTab) {
+                targetTab.classList.remove('hidden');
+                targetTab.classList.add('fade-in');
+            }
+
+            if(tabId === 'StaffOrders') fetchStaffData();
+            if(tabId === 'Orders') {
+                document.getElementById('customerListContainer').innerHTML = `
+                    <div style="padding: 30px; background:#FFF; border-radius:20px; box-shadow: var(--soft-shadow);">
+                        <i class="fas fa-folder-open fa-2x" style="color:var(--accent-primary); margin-bottom:10px;"></i>
+                        <div style="font-weight:600; color:var(--text-main);">พร้อมรับข้อมูลจากระบบ</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">กรุณาสร้างรายการใหม่ผ่านเมนู New Entry</div>
+                    </div>
+                `;
+            }
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function triggerFormFields() {
+            const val = document.getElementById('sheetSelector').value;
+            if(!val) return;
+            document.getElementById('mainForm').style.display = 'block';
+            document.getElementById('formTitleTitle').innerText = "กรอกข้อมูล: " + val;
+
+            document.querySelectorAll('.form-group').forEach(grp => {
+                const shows = grp.getAttribute('data-show');
+                if(shows && shows.split(',').includes(val)) {
+                    grp.classList.add('always-show');
+                } else {
+                    grp.classList.remove('always-show');
+                    grp.querySelectorAll('input, textarea, select').forEach(i => { if(i.id!=='sheetSelector') i.value=''; });
+                }
+            });
+            document.getElementById('imageFiles').value = '';
+            document.getElementById('previewContainer').innerHTML = '';
+            uploadedImages = [];
+        }
+
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    if (file.type.startsWith('image/')) {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800; 
+                            let scale = 1;
+                            if (img.width > MAX_WIDTH) scale = MAX_WIDTH / img.width;
+                            canvas.width = img.width * scale; canvas.height = img.height * scale;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                        };
+                    } else { resolve(event.target.result); }
+                };
+                reader.onerror = e => reject(e);
+            });
+        }
+
+        document.getElementById('imageFiles').addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+            if (files.length > 10) { Swal.fire('Warning', 'จำกัดสูงสุด 10 ไฟล์', 'warning'); this.value = ''; return; }
+            uploadedImages = [];
+            const preview = document.getElementById('previewContainer');
+            preview.innerHTML = ''; 
+            for (let i = 0; i < files.length; i++) {
+                const base64 = await getBase64(files[i]);
+                uploadedImages.push({ fileName: files[i].name, mimeType: files[i].type, imageBase64: base64 });
+                const img = document.createElement('img');
+                img.src = base64; img.className = 'preview-img';
+                preview.appendChild(img);
+            }
+        });
+
+        document.getElementById('mainForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const sheetName = document.getElementById('sheetSelector').value;
+            let formData = {};
+            let isValid = true;
+
+            document.querySelectorAll('.form-group.always-show input, .form-group.always-show select, .form-group.always-show textarea').forEach(el => {
+                if(el.id === 'imageFiles') return;
+                formData[el.id] = el.value;
+                if(!el.value && !['note', 'claimId', 'extraInfo', 'actualDate', 'documentNo', 'taxInvoice', 'productId'].includes(el.id)) {
+                    el.style.borderColor = 'var(--accent-secondary)';
+                    isValid = false;
+                } else {
+                    el.style.borderColor = 'var(--border-color)';
+                }
+            });
+
+            if(!isValid) return Swal.fire('Error', 'กรุณากรอกข้อมูลในช่องที่จำเป็นให้ครบถ้วน', 'error');
+
+            Swal.fire({
+                title: 'ยืนยันการบันทึก?', text: "ตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน", icon: 'question',
+                showCancelButton: true, confirmButtonColor: '#00AEEF', confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if(result.isConfirmed) {
+                    document.getElementById('submitOverlay').style.display = 'flex';
+                    const payload = { action: 'submitData', sheetName: sheetName, userName: dbUserData.RealName, images: uploadedImages, data: formData };
+                    
+                    fetch(GAS_API, { method: 'POST', body: JSON.stringify(payload) })
+                    .then(r => r.json())
+                    .then(res => {
+                        document.getElementById('submitOverlay').style.display = 'none';
+                        if(res.status === 'success') {
+                            Swal.fire('Success', 'บันทึกข้อมูลเรียบร้อย', 'success').then(() => {
+                                document.getElementById('mainForm').reset();
+                                document.getElementById('mainForm').style.display = 'none';
+                                document.getElementById('sheetSelector').value = "";
+                                uploadedImages = [];
+                                document.getElementById('previewContainer').innerHTML = '';
+                            });
+                        } else { Swal.fire('Error', res.message, 'error'); }
+                    }).catch(e => {
+                        document.getElementById('submitOverlay').style.display = 'none';
+                        Swal.fire('Error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+                    });
+                }
+            });
+        });
+
+        function fetchStaffData() {
+            const filterVal = document.getElementById('staffTypeFilter').value;
+            document.getElementById('staffListContainer').innerHTML = `
+                <div style="padding: 24px; background:#FFF; border-radius:20px; box-shadow: var(--soft-shadow);">
+                    <i class="fas fa-layer-group fa-2x" style="color:var(--accent-primary); margin-bottom:12px;"></i>
+                    <div style="font-weight:700; font-size:15px; color:var(--text-main);">ฐานข้อมูล: ${filterVal}</div>
+                    <p style="font-size:12px; color:var(--text-muted); margin-top:4px; margin-bottom:15px;">ระบบพร้อมสำหรับการแสดงรายการและประมวลผลคำขอเรียลไทม์</p>
+                    <button class="btn btn-outline" style="font-size:12px; padding:10px 14px;" onclick="approveClaimAction('SSP-JOB-09', '${filterVal}')">เปิดแถบตรวจสอบข้อมูล (Review)</button>
+                </div>
+            `;
+        }
+
+        function filterStaffList() {
+            const txt = document.getElementById('staffSearch').value.toLowerCase();
+            if(txt) {
+                Swal.fire('Search', 'กำลังค้นหาคีย์เวิร์ด: ' + txt, 'info');
+            }
+        }
+
+        function approveClaimAction(orderNo, sheetType) {
+            document.getElementById('approveOrderNo').value = orderNo;
+            document.getElementById('approveOrderType').value = sheetType;
+            document.getElementById('modalApproveClaim').classList.add('show');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        function submitApproval() {
+            const payload = {
+                sheetName: document.getElementById('approveOrderType').value,
+                orderNo: document.getElementById('approveOrderNo').value,
+                insuranceCompany: document.getElementById('approveInsurance').value,
+                reviewResult: document.getElementById('approveResult').value,
+                procurementComment: document.getElementById('approveComment').value,
+                docLink: document.getElementById('approveDocLink').value,
+                staffName: dbUserData.RealName,
+                status: 'ตรวจสอบเสร็จสิ้น'
+            };
+            
+            closeModal('modalApproveClaim');
+            document.getElementById('submitOverlay').style.display = 'flex';
+            
+            fetch(GAS_API, { method: 'POST', body: JSON.stringify({ action: 'STAFF_APPROVE_CLAIM', ...payload }) })
+            .then(r => r.json())
+            .then(res => {
+                document.getElementById('submitOverlay').style.display = 'none';
+                if(res.status === 'success') {
+                    Swal.fire('Success', 'บันทึกการตรวจสอบและจัดเก็บข้อมูลประกันเรียบร้อย', 'success');
+                } else { Swal.fire('Error', res.message, 'error'); }
+            }).catch(e => {
+                document.getElementById('submitOverlay').style.display = 'none';
+                Swal.fire('Error', 'เครือข่ายขัดข้อง', 'error');
+            });
+        }
     </script>
 </body>
 </html>
